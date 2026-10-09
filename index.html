@@ -1,0 +1,1459 @@
+<title>Weather Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a candy-colored adventure path of 12 "paradas" (stations), each a chunky card world with big tappable pieces. */
+:root{
+  --bg:#fff3fa; --lilac:#ecdcff; --lilac-d:#d9bcff; --ink:#3b1a6b; --ink-soft:#6c4a9c;
+  --pink:#ff4fa0; --pink-d:#cf2a7c; --pink-l:#ffd6ea;
+  --purple:#9b4dff; --purple-d:#6a2bd1; --purple-l:#e6d2ff;
+  --sun:#ffc531; --sun-d:#e09a00; --mint:#22c28f; --mint-l:#c9f6e6; --red:#ff5b6b; --red-l:#ffdadd; --blue:#2f9bff;
+  --card:#ffffff; --line:#ead2fb;
+  --f-display:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--f-body);font-size:17px;line-height:1.5;color:var(--ink);
+  background-color:var(--bg);
+  background-image:radial-gradient(circle at 20px 20px,rgba(255,79,160,.10) 3px,transparent 4px),radial-gradient(circle at 60px 60px,rgba(155,77,255,.10) 3px,transparent 4px);
+  background-size:80px 80px;
+  overflow-x:hidden;
+}
+.wrap{max-width:1040px;margin-inline:auto;padding-inline:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+select,input{font:inherit;color:var(--ink)}
+:focus-visible{outline:3px solid var(--sun-d);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;margin:0;text-wrap:balance}
+h3{font-size:1.35rem;margin-bottom:.4rem}
+p{margin:.3rem 0}
+.es{color:var(--ink-soft);font-weight:700}
+.center{text-align:center;display:flex;flex-direction:column;align-items:center;gap:.8rem;padding:.6rem}
+
+/* header */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:3px solid var(--line)}
+.bar-in{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:6px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:1.3rem;background:linear-gradient(90deg,var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.stars{background:var(--sun);color:#5a3a00;font-family:var(--f-display);font-weight:800;border-radius:999px;padding:2px 14px;box-shadow:0 3px 0 var(--sun-d)}
+.stars.pop{animation:pop .5s}
+.chip-btn{border:2px solid var(--purple);background:#fff;color:var(--purple-d);border-radius:999px;padding:2px 12px;font-weight:800}
+.chip-btn[aria-pressed="true"]{background:var(--purple);color:#fff}
+.nav{display:flex;gap:6px;overflow-x:auto;padding-block:6px 8px;scrollbar-width:thin}
+.navb{flex:0 0 auto;border:2px solid var(--line);background:#fff;border-radius:999px;padding:2px 12px;font-weight:800;font-size:.9rem;color:var(--ink-soft)}
+.navb:hover{background:var(--pink-l);border-color:var(--pink)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;background:linear-gradient(180deg,#ffcfee 0%,#ead7ff 62%,var(--bg) 100%);padding-block:2rem 2.4rem}
+.sky{position:absolute;inset:0;pointer-events:none}
+.sun{position:absolute;top:26px;right:7%;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff0a0,#ffc531);box-shadow:0 0 0 12px rgba(255,197,49,.25),0 0 0 26px rgba(255,197,49,.13);isolation:isolate}
+.sun i{position:absolute;inset:-38px;border-radius:50%;background:repeating-conic-gradient(rgba(255,197,49,.55) 0 7deg,transparent 7deg 30deg);animation:spin 28s linear infinite;z-index:-1}
+.cloud{position:absolute;left:-220px;height:34px;width:120px;border-radius:999px;background:#fff;opacity:.92;animation:drift 46s linear infinite}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:56px;height:56px;left:16px;top:-28px}
+.cloud::after{width:70px;height:70px;left:46px;top:-38px}
+.cloud.c1{top:34px}
+.cloud.c2{top:120px;transform:scale(.75);animation-duration:62s;animation-delay:-20s}
+.cloud.c3{top:70px;transform:scale(1.2);animation-duration:78s;animation-delay:-45s;opacity:.75}
+.rainbow{position:absolute;left:-90px;bottom:-250px;width:470px;height:470px;border-radius:50%;background:radial-gradient(circle,transparent 52%,#ff6fa8 52% 58%,#ffb07a 58% 64%,#ffe36e 64% 70%,#6fe0ac 70% 76%,#6fb7ff 76% 82%,#b574ff 82% 88%,transparent 88%);opacity:.8;animation:float 7s ease-in-out infinite}
+.drop{position:absolute;top:-24px;width:3px;height:16px;border-radius:3px;background:linear-gradient(var(--purple),var(--pink));opacity:.4;animation:fall 1.7s linear infinite}
+.hero-in{position:relative;display:grid;grid-template-columns:1.4fr .8fr;gap:1rem;align-items:center}
+.hero-in>*{min-width:0}
+.kicker{font-family:var(--f-display);font-weight:700;color:var(--purple-d);letter-spacing:.08em;text-transform:uppercase;font-size:.95rem}
+h1{font-size:clamp(2.6rem,9vw,5rem);font-weight:800;color:var(--ink)}
+h1 span{background:linear-gradient(90deg,var(--pink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block;animation:wiggle 4s ease-in-out infinite}
+.lead{font-size:1.2rem;font-weight:700;max-width:34em;margin-block:.6rem}
+.hero-btns{display:flex;flex-wrap:wrap;gap:12px;margin-block:1rem}
+.goals{list-style:none;padding:0;margin:.6rem 0 0;display:grid;gap:6px;max-width:34em}
+.goals li{background:rgba(255,255,255,.75);border-radius:14px;padding:6px 12px;font-weight:700}
+.note{font-size:.92rem;color:var(--ink-soft);font-weight:700;margin-top:.6rem}
+.nubi{justify-self:center;border:0;background:none;position:relative;width:min(100%,250px);padding:0;filter:drop-shadow(0 8px 0 rgba(155,77,255,.22));animation:float 5s ease-in-out infinite}
+.nubi svg{width:100%;height:auto;display:block}
+.nubi .blink{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
+.nubi .hi{position:absolute;top:-6px;right:0;background:var(--pink);color:#fff;font-family:var(--f-display);font-weight:800;border-radius:18px 18px 18px 4px;padding:2px 14px}
+
+/* buttons */
+.btn{--c:var(--pink);--sh:var(--pink-d);border:0;border-radius:999px;padding:.55em 1.3em;font-family:var(--f-display);font-weight:700;font-size:1.1rem;background:var(--c);color:#fff;box-shadow:0 5px 0 var(--sh);transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--sh)}
+.btn.purple{--c:var(--purple);--sh:var(--purple-d)}
+.btn.mint{--c:var(--mint);--sh:#12906a}
+.btn.small{font-size:.95rem;padding:.35em 1em}
+.btn.big{font-size:1.4rem;padding:.6em 1.6em}
+
+/* stations */
+.station{padding-block:2.2rem;scroll-margin-top:96px}
+.station.alt{background:rgba(255,255,255,.55)}
+.st-head{display:flex;align-items:center;gap:.9rem;margin-bottom:.6rem}
+.badge{flex:0 0 auto;width:64px;height:62px;display:grid;place-items:center;background:var(--sun);color:#5a3a00;font-family:var(--f-display);font-weight:800;font-size:1.7rem;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);padding-top:6px}
+.st-head h2{font-size:clamp(1.6rem,5vw,2.5rem);font-weight:800}
+.st-head small{display:block;font-family:var(--f-body);font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:var(--pink-d)}
+.how{background:var(--purple-l);border-radius:18px;padding:.7rem 1rem;margin-block:.4rem 1.1rem;display:flex;gap:.7rem;align-items:flex-start;font-weight:700}
+.how b.t{flex:0 0 auto;background:var(--purple);color:#fff;border-radius:999px;padding:0 .7em;font-family:var(--f-display)}
+.how>span{min-width:0}
+.card{background:var(--card);border:3px solid var(--line);border-radius:26px;padding:1.1rem;box-shadow:0 8px 0 rgba(155,77,255,.12);margin-block:1.1rem}
+
+/* speakable text */
+[data-say]{cursor:pointer}
+.say{border-radius:10px;transition:background .15s}
+.say:hover{background:var(--pink-l)}
+.say::after{content:' 🔊';font-size:.78em}
+.speaking{animation:pulse .7s ease-in-out infinite;background:var(--pink-l)}
+.wcard.speaking,.lgopt.speaking{background:var(--pink-l)}
+
+/* vocabulary cards */
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+.wcard{border:0;border-radius:24px;padding:.8rem .5rem;display:flex;flex-direction:column;align-items:center;gap:2px;color:#fff;box-shadow:0 7px 0 rgba(0,0,0,.16);transition:transform .15s}
+.wcard:hover{transform:translateY(-4px) rotate(-2deg)}
+.wcard:active{transform:translateY(2px)}
+.wcard.c0{background:linear-gradient(160deg,#ff7ab8,#ff4fa0)}
+.wcard.c1{background:linear-gradient(160deg,#b57cff,#8f46f5)}
+.wcard.c2{background:linear-gradient(160deg,#ff8fd0,#c75cf2)}
+.wcard.c3{background:linear-gradient(160deg,#9d6bff,#ff5fa8)}
+.we{font-size:3rem;line-height:1.1;animation:float 4s ease-in-out infinite}
+.ww{font-family:var(--f-display);font-weight:800;font-size:1.4rem}
+.wes{font-size:.9rem;opacity:.92;font-weight:800}
+.qa{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-block:.6rem}
+.bq,.ba{font-family:var(--f-display);font-weight:700;font-size:1.25rem;padding:.4em 1em;border-radius:22px;display:inline-block}
+.bq{background:var(--pink-l);border:3px solid var(--pink)}
+.ba{background:var(--purple-l);border:3px solid var(--purple)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--purple);background:#fff;color:var(--purple-d);border-radius:999px;padding:.2em .9em;font-weight:800}
+.chip:hover,.chip.on{background:var(--purple);color:#fff}
+
+/* postcards */
+.pcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.pc{background:#fffdf8;border:3px dashed var(--pink);border-radius:14px;padding:.9rem;box-shadow:0 6px 0 rgba(255,79,160,.2);display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.pc.t0{transform:rotate(-1.2deg)}.pc.t1{transform:rotate(1.2deg)}
+.pc-top{display:flex;justify-content:space-between;align-items:center}
+.pc-scene{font-size:2.6rem}
+.stamp{border:3px solid var(--purple);color:var(--purple);border-radius:8px;padding:0 .5em;font-family:var(--f-display);font-weight:800;transform:rotate(6deg);font-size:.9rem}
+.pc-text{font-weight:700;font-size:1.05rem;display:grid;gap:2px}
+.pc-es{background:var(--lilac);border-radius:12px;padding:.5rem .7rem;font-weight:700;color:var(--ink-soft)}
+.pc-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+
+/* quizzes */
+.qgroup{padding-block:.8rem;border-bottom:2px dotted var(--line)}
+.qgroup:last-child{border-bottom:0}
+.qtext{font-family:var(--f-display);font-weight:700;font-size:1.25rem;display:inline-block;padding:.1em .3em}
+.qn{display:inline-grid;place-items:center;width:1.7em;height:1.7em;border-radius:50%;background:var(--pink);color:#fff;font-size:.85em;margin-right:.3em}
+.es-note{color:var(--ink-soft);font-weight:700;font-size:.95rem;margin-left:.3em}
+.qpic{font-size:3rem;margin-left:.2em;line-height:1.2}
+.opts{display:flex;flex-wrap:wrap;gap:10px;margin-block:.5rem}
+.opt{border:3px solid var(--line);background:#fff;border-radius:16px;padding:.4em 1em;font-weight:800;box-shadow:0 4px 0 var(--line);transition:transform .1s}
+.opt:hover:not(:disabled){transform:translateY(-2px);border-color:var(--purple)}
+.opt.good{background:var(--mint-l);border-color:var(--mint);box-shadow:0 4px 0 var(--mint);animation:pop .5s}
+.opt.bad{background:var(--red-l);border-color:var(--red);box-shadow:0 4px 0 var(--red);animation:shake .4s;text-decoration:line-through}
+.opt:disabled{cursor:default}
+.opt:disabled:not(.good):not(.bad){opacity:.55}
+.fb{min-height:1.4em;font-weight:800;color:var(--ink-soft)}
+.fb.ok{color:#0d8a62}.fb.no{color:var(--pink-d)}
+
+/* listening game */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.8rem}
+.lg-top{display:flex;justify-content:space-between;font-family:var(--f-display);font-weight:800;font-size:1.2rem;width:100%}
+.lgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:520px}
+.lgopt{border:3px solid var(--line);background:#fff;border-radius:22px;padding:.5rem;font-size:3rem;line-height:1.2;box-shadow:0 5px 0 var(--line);transition:transform .12s}
+.lgopt:hover:not(:disabled){transform:scale(1.06)}
+.lgopt.good{background:var(--mint-l);border-color:var(--mint)}
+.lgopt.bad{background:var(--red-l);border-color:var(--red)}
+.lgopt .lw{display:block;font-family:var(--f-display);font-size:.95rem;font-weight:800}
+.bigpic{font-size:6rem;line-height:1.1;animation:float 3s ease-in-out infinite}
+.trophy{font-size:4.5rem;animation:pop .8s}
+
+/* places */
+.bank{display:flex;flex-wrap:wrap;gap:8px;margin-block:.5rem 1rem;padding:.6rem;background:var(--pink-l);border-radius:18px}
+.bank .chip{border-color:var(--pink);color:var(--pink-d)}
+.prow{display:flex;align-items:center;gap:.8rem;padding:.6rem;border-radius:18px;border:3px solid transparent;flex-wrap:wrap}
+.prow.ok{background:var(--mint-l);border-color:var(--mint)}
+.prow.no{background:var(--red-l);border-color:var(--red)}
+.prow .pe{font-size:2.2rem}
+.prow .ptxt{flex:1 1 220px;min-width:0;font-weight:800;font-size:1.1rem}
+select.blank{border:3px solid var(--purple);border-radius:12px;background:#fff;padding:.1em .4em;font-weight:800;max-width:100%}
+.scene-pic{font-size:3.2rem;line-height:1.2}
+
+/* time machine & study */
+.study{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.sbox{border-radius:20px;padding:.8rem 1rem;color:#fff}
+.sbox.a{background:linear-gradient(150deg,#ff6fb2,#ff4fa0)}
+.sbox.b{background:linear-gradient(150deg,#b57cff,#8f46f5)}
+.sbox.c{background:linear-gradient(150deg,#ff8fd0,#d85cf0)}
+.sbox.d{background:linear-gradient(150deg,#8f6bff,#ff5fa8)}
+.sbox .big{font-family:var(--f-display);font-weight:800;font-size:1.8rem}
+.sbox .say:hover{background:rgba(255,255,255,.25)}
+.sbox .say.speaking{background:rgba(255,255,255,.3)}
+.tm-scene{display:flex;gap:1rem;justify-content:center;font-size:4rem;line-height:1.2;padding:.4rem;border-radius:22px;background:linear-gradient(160deg,var(--pink-l),var(--purple-l))}
+.tm-scene.swap{animation:pop .5s}
+.tm-text{font-family:var(--f-display);font-weight:700;font-size:1.35rem;text-align:center;padding:.5rem;display:block}
+mark{background:var(--sun);color:#5a3a00;border-radius:8px;padding:0 .3em}
+
+/* clothes */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px}
+.cl{border:3px solid var(--line);background:#fff;border-radius:20px;padding:.5rem;text-align:center;box-shadow:0 5px 0 var(--line);font-weight:800}
+.cl .ce{display:block;font-size:2.4rem}
+.cl small{display:block;color:var(--ink-soft)}
+.cl.on{background:var(--pink-l);border-color:var(--pink);box-shadow:0 5px 0 var(--pink)}
+.avatar{display:flex;flex-direction:column;align-items:center;gap:.2rem;font-size:5rem;line-height:1.1}
+.avatar .worn{font-size:2.2rem;min-height:2.8rem;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.kline{font-family:var(--f-display);font-weight:700;font-size:1.25rem;padding:.2em .6em;border-radius:14px}
+.kline.speaking{background:var(--pink);color:#fff;animation:none;transform:scale(1.03)}
+
+/* sounds */
+.sgroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.sg{border-radius:22px;padding:.8rem;border:3px solid var(--line);background:#fff}
+.sg h4{font-family:var(--f-display);font-size:1.3rem;margin:0 0 .4rem;color:var(--pink-d)}
+.sg .es{font-size:.92rem}
+.wchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:.4rem}
+.wchip{border:2px solid var(--purple);background:var(--purple-l);border-radius:16px;padding:.2em .7em;font-weight:800;display:inline-flex;gap:.3em;align-items:center}
+.wchip:hover{background:var(--purple);color:#fff}
+.dict{display:grid;gap:10px}
+.dict-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dict-row input{border:3px solid var(--purple);border-radius:12px;padding:.3em .6em;width:min(100%,220px);font-weight:800}
+.dict-row input.ok{border-color:var(--mint);background:var(--mint-l)}
+.dict-row input.no{border-color:var(--red);background:var(--red-l)}
+.sentence-b{font-family:var(--f-display);font-weight:700;font-size:1.3rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* instruments */
+.igrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.ins{border-radius:24px;padding:1rem;color:#fff;display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.ins.i0{background:linear-gradient(160deg,#ff77b6,#ff4fa0)}
+.ins.i1{background:linear-gradient(160deg,#b57cff,#8f46f5)}
+.ins.i2{background:linear-gradient(160deg,#c06bf7,#ff5fa8)}
+.ins.i3{background:linear-gradient(160deg,#8f6bff,#e052c8)}
+.ins .ie{font-size:3rem}
+.ins .in{font-family:var(--f-display);font-size:1.5rem;font-weight:800}
+.ins .row{font-weight:800}
+.ins .btn{align-self:flex-start;margin-top:.3rem;--c:#fff;--sh:rgba(0,0,0,.25);color:var(--purple-d)}
+
+/* invitation */
+.inv{background:linear-gradient(150deg,#fff,#ffeaf5);border:4px solid var(--pink);border-radius:24px;padding:1rem 1.2rem;display:grid;gap:.5rem;max-width:560px}
+.inv h4{font-family:var(--f-display);font-size:2rem;color:var(--pink-d);margin:0}
+.seg{padding:.2em .5em;border-radius:10px;border:2px dashed transparent;font-weight:800;font-size:1.1rem;cursor:pointer;display:inline-block;text-decoration-thickness:5px;text-underline-offset:4px;text-decoration-line:none}
+.seg:hover{border-color:var(--purple)}
+.seg[data-pen="what"]{text-decoration-line:underline;text-decoration-color:var(--mint)}
+.seg[data-pen="where"]{text-decoration-line:underline;text-decoration-color:var(--pink)}
+.seg[data-pen="when"]{text-decoration-line:underline;text-decoration-color:var(--blue)}
+.seg.ok{background:var(--mint-l)}.seg.no{background:var(--red-l)}
+.pens{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.8rem}
+.pen{border:3px solid var(--line);background:#fff;border-radius:999px;padding:.2em 1em;font-weight:800;box-shadow:0 4px 0 var(--line)}
+.pen.on{box-shadow:0 4px 0 currentColor;transform:translateY(-2px)}
+.pen[data-pen="what"]{color:#0d8a62;border-color:var(--mint)}
+.pen[data-pen="where"]{color:var(--pink-d);border-color:var(--pink)}
+.pen[data-pen="when"]{color:#1769c2;border-color:var(--blue)}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-block:.6rem}
+.fields label{display:grid;gap:2px;font-weight:800}
+.fields input,.tbl input{border:3px solid var(--purple);border-radius:12px;padding:.3em .6em;width:100%;min-width:0;font-weight:700}
+.tbl{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:520px}
+.tbl b{font-family:var(--f-display)}
+
+/* memory */
+.mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-width:520px;margin-inline:auto}
+.mcard{aspect-ratio:1/1;max-width:100%;border:0;background:none;padding:0;perspective:600px}
+.mf{display:block;width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .4s}
+.mcard.flip .mf,.mcard.done .mf{transform:rotateY(180deg)}
+.mb,.mfr{position:absolute;inset:0;display:grid;place-items:center;border-radius:18px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.mb{background:linear-gradient(150deg,var(--pink),var(--purple));color:#fff;font-family:var(--f-display);font-size:2rem;font-weight:800;box-shadow:0 5px 0 var(--purple-d)}
+.mfr{background:#fff;border:3px solid var(--purple);transform:rotateY(180deg)}
+.mcard.done .mfr{background:var(--mint-l);border-color:var(--mint)}
+.me{font-size:clamp(1.6rem,8vw,2.8rem)}
+.mw{font-family:var(--f-display);font-size:clamp(.8rem,3.4vw,1.15rem);font-weight:800;text-align:center;overflow-wrap:anywhere}
+
+/* word search */
+.wsbox{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.wsgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;max-width:480px;margin-inline:auto;width:100%}
+.wsc{aspect-ratio:1/1;border:0;border-radius:8px;background:var(--purple-l);font-family:var(--f-display);font-weight:800;font-size:clamp(.8rem,3.4vw,1.2rem);padding:0;color:var(--ink)}
+.wsc.sel{background:var(--sun);color:#5a3a00}
+.wsc.f0{background:#ffb3d9}.wsc.f1{background:#c7a5ff}.wsc.f2{background:#9be7c9}.wsc.f3{background:#ffd98a}.wsc.f4{background:#a9d3ff}
+.wlist{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.wlist .wchip.found{text-decoration:line-through;background:var(--mint-l);border-color:var(--mint);opacity:.8}
+
+/* wheel */
+.wheel-wrap{position:relative;width:min(100%,300px);aspect-ratio:1/1;margin-inline:auto}
+.pointer{position:absolute;top:-14px;left:50%;margin-left:-16px;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--ink);z-index:3;filter:drop-shadow(0 2px 0 rgba(0,0,0,.2))}
+.wheel{position:absolute;inset:0;border-radius:50%;border:6px solid var(--ink);transition:transform 4s cubic-bezier(.12,.7,.1,1)}
+.wheel span{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;display:grid;place-items:center;font-size:2rem}
+.hubcap{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:#fff;border:5px solid var(--ink);z-index:2}
+
+/* diploma */
+.dip{background:linear-gradient(150deg,#fff,#ffeaf5 50%,#efe0ff);border:6px double var(--purple);border-radius:28px;padding:1.4rem;text-align:center;display:grid;gap:.5rem;max-width:620px;margin-inline:auto}
+.dip h3{font-size:2rem;color:var(--pink-d)}
+.dip input{border:3px solid var(--purple);border-radius:14px;padding:.4em .8em;text-align:center;font-weight:800;font-size:1.2rem;width:min(100%,320px);margin-inline:auto}
+.dip .medal{font-size:4rem}
+
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:var(--ink);color:#fff;font-weight:800;border-radius:999px;padding:.5em 1.2em;opacity:0;pointer-events:none;transition:.3s;z-index:90;max-width:calc(100vw - 32px);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:80;width:100%;height:100%}
+footer{padding-block:2rem 3rem;text-align:center;color:var(--ink-soft);font-weight:800}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 460px))}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes fall{0%{transform:translateY(0)}100%{transform:translateY(520px)}}
+@keyframes wiggle{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+@media (max-width:640px){
+  body{font-size:16px}
+  .hero-in{grid-template-columns:minmax(0,1fr)}
+  .nubi{width:min(60%,200px)}
+  .sun{width:70px;height:70px;right:4%}
+  .lgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pc.t0,.pc.t1{transform:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<header class="bar">
+  <div class="bar-in wrap">
+    <div class="brand">Weather Report</div>
+    <div class="bar-tools">
+      <span class="stars" id="starBox" aria-live="polite">⭐ <b id="starCount">0</b></span>
+      <button class="chip-btn" id="slowBtn" aria-pressed="false">🐢 Voz lenta</button>
+    </div>
+  </div>
+  <nav class="nav wrap" id="nav" aria-label="Paradas de la clase"></nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="sky" aria-hidden="true" id="sky">
+    <div class="sun"><i></i></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="rainbow"></div>
+  </div>
+  <div class="wrap hero-in">
+    <div>
+      <p class="kicker">Unit 8 · Inglés · Tercero Básico</p>
+      <h1>Weather <span>Report</span></h1>
+      <p class="lead">¡Hoy somos meteorólogas! Vamos a aprender a decir cómo está el clima, qué ropa usar, qué pasó ayer y cómo suenan la lluvia y el trueno.</p>
+      <div class="hero-btns">
+        <button class="btn" id="startBtn">¡Empezar la aventura!</button>
+        <button class="btn purple" id="voiceBtn">🔊 Probar la voz</button>
+      </div>
+      <ul class="goals">
+        <li>☀️ Hoy aprenderé a decir el clima en inglés.</li>
+        <li>🧣 Hoy aprenderé los nombres de la ropa.</li>
+        <li>⏪ Hoy aprenderé a contar qué pasó ayer: <i>was</i> y <i>were</i>.</li>
+        <li>🎮 ¡Y al final hay juegos con premios!</li>
+      </ul>
+      <p class="note">Todo lo que está en inglés se escucha al tocarlo. Si no suena, sube el volumen y abre la clase en Chrome, Edge o Safari.</p>
+    </div>
+    <button class="nubi" data-say="Hello! I'm Nubi. Let's learn about the weather!" aria-label="Nubi la nube, toca para escucharla">
+      <svg viewBox="0 0 200 150" role="img" aria-hidden="true">
+        <g fill="#fff">
+          <rect x="22" y="72" width="156" height="58" rx="29"/>
+          <circle cx="70" cy="76" r="36"/>
+          <circle cx="118" cy="58" r="44"/>
+          <circle cx="156" cy="88" r="30"/>
+        </g>
+        <g class="blink" fill="#3b1a6b"><circle cx="92" cy="92" r="6"/><circle cx="130" cy="92" r="6"/></g>
+        <circle cx="76" cy="106" r="9" fill="#ff4fa0" opacity=".55"/>
+        <circle cx="146" cy="106" r="9" fill="#ff4fa0" opacity=".55"/>
+        <path d="M102 104 Q111 116 120 104" stroke="#3b1a6b" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="hi">Hello!</span>
+    </button>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="station" id="s1"><div class="wrap">
+  <div class="st-head"><span class="badge">1</span><h2><small>Parada 1</small>El clima</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Toca cada tarjeta para <b>escuchar</b> la palabra en inglés. Repite en voz alta, ¡como un loro! Debajo de cada palabra está el significado en español.</span></div>
+  <div class="wgrid" id="wgrid"></div>
+  <div class="card">
+    <h3>Para preguntar y responder</h3>
+    <p class="es">Así se pregunta <b>¿Cómo está el clima?</b> y así se responde. Elige otro clima y escucha cómo cambia la respuesta.</p>
+    <div class="qa">
+      <span class="bq say" data-say="What's the weather like?">What's the weather like?</span>
+      <span class="ba say" id="patAns" data-say="It's windy.">It's windy.</span>
+    </div>
+    <div class="chips" id="patChips"></div>
+  </div>
+</div></section>
+
+<!-- 2 -->
+<section class="station alt" id="s2"><div class="wrap">
+  <div class="st-head"><span class="badge">2</span><h2><small>Parada 2</small>Postales de vacaciones</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Cuatro amigos mandan postales desde sus vacaciones. Toca cada línea para escucharla o pulsa <b>Escuchar toda</b>. Si no entiendes, pulsa <b>Traducir</b>. Después responde las preguntas.</span></div>
+  <div class="pcgrid" id="pcgrid"></div>
+  <div class="card"><h3>Ejercicio A · Lee y responde</h3><p class="es">Elige la respuesta correcta. Si te equivocas, ¡prueba otra vez!</p><div id="quizPost"></div></div>
+  <div class="card"><h3>Ejercicio B · ¿Quién es?</h3><p class="es">Escucha la frase (tócala) y elige a quién describe.</p><div id="quizWho"></div></div>
+</div></section>
+
+<!-- 3 -->
+<section class="station" id="s3"><div class="wrap">
+  <div class="st-head"><span class="badge">3</span><h2><small>Parada 3</small>Escucha y juega</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Son 8 rondas. En <b>Escucha y toca</b>, oye la palabra y toca el dibujo correcto. En <b>Yes or No</b>, mira el dibujo y di si la frase que escuchas es correcta: <i>yes</i> = sí, <i>no</i> = no. ¡Cada acierto es una estrella!</span></div>
+  <div class="card">
+    <div class="tabs"><button class="chip on" data-lgmode="pick">Escucha y toca</button><button class="chip" data-lgmode="yn">Yes or No</button></div>
+    <div id="lg" class="center"></div>
+  </div>
+</div></section>
+
+<!-- 4 -->
+<section class="station alt" id="s4"><div class="wrap">
+  <div class="st-head"><span class="badge">4</span><h2><small>Parada 4</small>¿Qué clima hace aquí?</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Completa las frases con una palabra del banco rosado (usa cada palabra una sola vez). Toca el 🔊 para oír la frase. Luego practica la pregunta con las 5 fotos.</span></div>
+  <div class="card">
+    <h3>Ejercicio A · Escucha y completa</h3>
+    <div class="bank" id="bank"></div>
+    <div id="places"></div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:.6rem"><button class="btn" id="chkPlaces">Revisar</button><span class="fb" id="placesFb"></span></div>
+  </div>
+  <div class="card">
+    <h3>Ejercicio B · Pregunta y responde</h3>
+    <p class="es">Toca la pregunta para escucharla. Luego elige cómo está el clima en cada lugar.</p>
+    <div id="scenes"></div>
+  </div>
+</div></section>
+
+<!-- 5 -->
+<section class="station" id="s5"><div class="wrap">
+  <div class="st-head"><span class="badge">5</span><h2><small>Parada 5</small>Ayer y hoy</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Para hablar de <b>ayer</b> usamos <b>was</b> y <b>were</b> (era, estaba, estuvo). Para hablar de <b>hoy</b> usamos <b>is</b> y <b>are</b>. ¡Toca los cuadros para escuchar los ejemplos!</span></div>
+  <div class="study" id="study"></div>
+  <div class="card">
+    <h3>La máquina del tiempo</h3>
+    <p class="es">Elige a los amigos y viaja a <b>ayer</b> o a <b>hoy</b>. Mira cómo cambia la frase.</p>
+    <div class="tabs" id="tmChars"></div>
+    <div class="tabs"><button class="btn purple small" data-day="y">⏪ Yesterday (ayer)</button><button class="btn small" data-day="t">Today (hoy) ⏩</button></div>
+    <div class="tm-scene" id="tmScene"></div>
+    <span class="tm-text say" id="tmText"></span>
+  </div>
+  <div class="card"><h3>Ejercicio · was, were, is o are</h3><p class="es">Elige la palabra que falta. ¡Pista: mira si dice ayer o hoy!</p><div id="quizWas"></div></div>
+  <div class="card">
+    <h3>¿Dónde estabas ayer en la tarde?</h3>
+    <p class="es">Toca la pregunta y elige un lugar para responder.</p>
+    <div class="qa"><span class="bq say" data-say="Where were you yesterday evening?">Where were you yesterday evening?</span><span class="ba say" id="wwAns" data-say="I was at the park.">I was at the park.</span></div>
+    <div class="chips" id="wwChips"></div>
+  </div>
+</div></section>
+
+<!-- 6 -->
+<section class="station alt" id="s6"><div class="wrap">
+  <div class="st-head"><span class="badge">6</span><h2><small>Parada 6</small>La ropa y el clima</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Toca cada prenda para escuchar su nombre. Luego viste a la niña según el clima y arma tus propias frases. Al final, ¡canta con Nubi!</span></div>
+  <div class="card"><h3>Clothes (la ropa)</h3><div class="cgrid" id="cgrid"></div></div>
+  <div class="card">
+    <h3>Juego · ¡Vístela!</h3>
+    <p class="es" id="drEs"></p>
+    <div class="qa"><span class="bq say" id="drSay" data-say="">…</span></div>
+    <div class="avatar" id="avatar"></div>
+    <p class="es">Toca las prendas que necesita. Todas las prendas del clima frío van juntas y las de calor también. El gorro sirve para los dos.</p>
+    <div class="cgrid" id="dgrid"></div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:.8rem"><button class="btn" id="drCheck">Revisar</button><button class="btn purple" id="drNext" hidden>Siguiente clima</button><span class="fb" id="drFb"></span></div>
+  </div>
+  <div class="card">
+    <h3>Make sentences · Arma tu frase</h3>
+    <p class="es">Elige dos climas y dos prendas. La frase se arma sola y puedes escucharla.</p>
+    <div class="sentence-b">
+      <span>It was</span><select class="blank" id="smW1"></select><span>and</span><select class="blank" id="smW2"></select><span>. She was in</span><select class="blank" id="smC1"></select><span>and</span><select class="blank" id="smC2"></select>
+    </div>
+    <p class="sentence-b" style="margin-top:.8rem"><span class="say" id="smOut" data-say="">…</span></p>
+  </div>
+  <div class="card">
+    <h3>Canta con Nubi · Chant</h3>
+    <p class="es">Una cancioncita para practicar la ropa y el clima. Pulsa cantar y repite cada línea. Con la voz lenta es más fácil.</p>
+    <div id="chant" style="display:grid;gap:4px"></div>
+    <div style="margin-top:.8rem"><button class="btn big" id="singBtn">🎤 Cantar</button></div>
+  </div>
+</div></section>
+
+<!-- 7 -->
+<section class="station" id="s7"><div class="wrap">
+  <div class="st-head"><span class="badge">7</span><h2><small>Parada 7</small>Sonidos y ortografía</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Algunas letras suenan igual aunque se escriben distinto. Toca las palabras de cada grupo, escucha el sonido y repítelo. Después practica las rimas y escribe lo que oyes.</span></div>
+  <div class="sgroups" id="sgroups"></div>
+  <div class="card"><h3>Rimas · ¿Cuál suena parecido?</h3><p class="es">Una rima es cuando el final de dos palabras suena casi igual.</p><div id="quizRhyme"></div></div>
+  <div class="card"><h3>Escucha y escribe</h3><p class="es">Toca 🔊, escucha la palabra y escríbela. Luego pulsa Revisar.</p><div class="dict" id="dict"></div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:.8rem"><button class="btn" id="dictCheck">Revisar</button><span class="fb" id="dictFb"></span></div></div>
+  <div class="card">
+    <h3>Show what you know · Frase loca</h3>
+    <p class="es">Elige las palabras y escucha tu frase divertida.</p>
+    <div class="sentence-b"><span>The</span><select class="blank" id="sbA"></select><span>paints</span><select class="blank" id="sbB"></select><span>on a</span><select class="blank" id="sbC"></select><span>day.</span></div>
+    <p class="sentence-b" style="margin-top:.8rem"><span class="say" id="sbOut" data-say="">…</span></p>
+  </div>
+</div></section>
+
+<!-- 8 -->
+<section class="station alt" id="s8"><div class="wrap">
+  <div class="st-head"><span class="badge">8</span><h2><small>Parada 8</small>El caso del jueves</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Eres una detective. Lee el expediente (toca las líneas para escucharlas) y responde. Para <b>una</b> persona o cosa usamos <i>was / wasn't</i>. Para <b>varias</b> usamos <i>were / weren't</i>.</span></div>
+  <div class="card">
+    <h3>Expediente · Thursday morning</h3>
+    <div class="scene-pic" aria-hidden="true">🕵️‍♀️ ☔ 🕚</div>
+    <p class="say" data-say="Last Thursday morning it was rainy and cold.">Last Thursday morning it was rainy and cold.</p>
+    <p class="say" data-say="Ana was at the library at eleven o'clock.">Ana was at the library at eleven o'clock.</p>
+    <p class="say" data-say="Beto and Caro were at the park.">Beto and Caro were at the park.</p>
+  </div>
+  <div class="card"><h3>Preguntas de la detective</h3><div id="quizCase"></div></div>
+</div></section>
+
+<!-- 9 -->
+<section class="station" id="s9"><div class="wrap">
+  <div class="st-head"><span class="badge">9</span><h2><small>Parada 9</small>¿Cómo suena la naturaleza?</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Hay instrumentos que imitan la lluvia, el trueno y los animales. Toca cada tarjeta para escuchar los datos y pulsa <b>Sonido</b> para oír una imitación. <b>Wind</b> = de viento (se sopla). <b>Percussion</b> = de percusión (se golpea o se agita).</span></div>
+  <div class="igrid" id="igrid"></div>
+  <div class="card"><h3>Ejercicio A · ¿De qué país es?</h3><div id="quizCountry"></div></div>
+  <div class="card"><h3>Ejercicio B · Wind o percussion</h3><div id="quizFam"></div></div>
+  <div class="card"><h3>¿Sabías que…?</h3><p class="es">Existe un instrumento llamado <i>sea organ</i> (órgano marino) que no necesitas tocar: ¡lo tocan las olas del mar!</p>
+    <p><span class="say" data-say="A sea organ is a musical instrument that waves play.">A sea organ is a musical instrument that waves play.</span></p></div>
+</div></section>
+
+<!-- 10 -->
+<section class="station alt" id="s10"><div class="wrap">
+  <div class="st-head"><span class="badge">10</span><h2><small>Parada 10</small>¡Estás invitada!</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>Una invitación dice <b>qué</b> es el evento (What?), <b>dónde</b> es (Where?) y <b>cuándo</b> es (When?). Elige un lápiz de color y toca las partes de la invitación para subrayarlas.</span></div>
+  <div class="card">
+    <div class="pens" id="pens">
+      <button class="pen on" data-pen="what">What? (qué)</button>
+      <button class="pen" data-pen="where">Where? (dónde)</button>
+      <button class="pen" data-pen="when">When? (cuándo)</button>
+    </div>
+    <div class="inv" id="inv"></div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:.8rem"><button class="btn" id="invCheck">Revisar</button><button class="btn purple" id="invHear">🔊 Escuchar invitación</button><span class="fb" id="invFb"></span></div>
+  </div>
+  <div class="card">
+    <h3>Proyecto · Crea tu invitación</h3>
+    <p class="es">Escribe los datos de tu fiesta y escucha tu invitación. (Escribe en inglés lo que puedas: fecha, hora y lugar.)</p>
+    <div class="fields">
+      <label for="ivEvent">What? (qué)<input id="ivEvent" type="text" value="weather party" maxlength="40"></label>
+      <label for="ivDate">When? (día)<input id="ivDate" type="text" value="Saturday, 20th June" maxlength="40"></label>
+      <label for="ivTime">Time (hora)<input id="ivTime" type="text" value="3 pm" maxlength="20"></label>
+      <label for="ivPlace">Where? (dónde)<input id="ivPlace" type="text" value="my garden" maxlength="40"></label>
+    </div>
+    <div class="inv"><h4>You're invited!</h4>
+      <p class="say" id="ivOut" data-say="" style="font-weight:800;font-size:1.1rem"></p></div>
+    <h3 style="margin-top:1rem">Instrumentos de mi grupo</h3>
+    <p class="es">En grupo, anoten qué instrumentos tienen o pueden fabricar (¡una botella con arroz suena como lluvia!) y quién toca cada uno.</p>
+    <div class="tbl" id="tbl"></div>
+  </div>
+</div></section>
+
+<!-- 11 -->
+<section class="station" id="s11"><div class="wrap">
+  <div class="st-head"><span class="badge">11</span><h2><small>Parada 11</small>¡Juegos extra!</h2></div>
+  <div class="card">
+    <h3>Memoria del clima</h3>
+    <p class="es">Encuentra las parejas: un dibujo y su palabra en inglés. Al dar vuelta una carta la escucharás.</p>
+    <p class="es">Intentos: <b id="memMoves">0</b> · Parejas: <b id="memFound">0</b> / 8</p>
+    <div class="mgrid" id="memGrid"></div>
+    <div class="center"><button class="btn purple" id="memReset">Barajar de nuevo</button></div>
+  </div>
+  <div class="card">
+    <h3>Sopa de letras</h3>
+    <p class="es">Busca las 10 palabras. Toca la <b>primera letra</b> y luego la <b>última letra</b> de la palabra. Pueden estar de izquierda a derecha, de arriba abajo o en diagonal ↘ (también al revés).</p>
+    <div class="wsbox">
+      <div class="wsgrid" id="wsGrid"></div>
+      <div class="wlist" id="wsList"></div>
+      <div class="center"><span class="fb" id="wsFb"></span><button class="btn purple" id="wsReset">Nueva sopa de letras</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>La ruleta del clima</h3>
+    <p class="es">Gira la ruleta y responde en voz alta: <i>What's the weather like?</i> Si la ruleta dice <i>It's snowing</i>, ¡hasta puedes tiritar!</p>
+    <div class="wheel-wrap"><div class="pointer"></div><div class="wheel" id="wheel"></div><div class="hubcap"></div></div>
+    <div class="center"><button class="btn big" id="spinBtn">🎡 ¡Girar!</button><p class="ba say" id="spinOut" data-say="What's the weather like?">What's the weather like?</p></div>
+  </div>
+</div></section>
+
+<!-- 12 -->
+<section class="station alt" id="s12"><div class="wrap">
+  <div class="st-head"><span class="badge">12</span><h2><small>Parada final</small>¡Tu diploma!</h2></div>
+  <div class="how"><b class="t">¿Qué hago?</b><span>¡Lo lograste! Escribe tu nombre y recibe tu diploma de meteoróloga.</span></div>
+  <div class="dip">
+    <div class="medal" aria-hidden="true">🏅</div>
+    <h3>Weather Expert</h3>
+    <label for="dipName" class="es">Escribe tu nombre:</label>
+    <input id="dipName" type="text" maxlength="30" placeholder="Tu nombre">
+    <p class="es" id="dipText" style="font-size:1.1rem">Estrellas ganadas: <b id="dipStars">0</b></p>
+    <div class="center"><button class="btn big" id="dipBtn">🎓 Recibir diploma</button></div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Goodbye! See you next class. 👋 <button class="chip say" data-say="Goodbye! See you next class!">Escuchar</button></footer>
+
+<div id="toast" role="status"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+var rnd=function(n){return Math.floor(Math.random()*n);};
+var shuffle=function(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1);var t=a[i];a[i]=a[j];a[j]=t;}return a;};
+var reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function go(id){var el=document.getElementById(id);if(el&&el.scrollIntoView){el.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}}
+var toastT=null;
+function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},1900);}
+function after(ms,fn){return setTimeout(fn,ms);}
+
+/* ---------- voice (American English) ---------- */
+var TTS={
+  ok:('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window),
+  voice:null,slow:false,keep:[],
+  load:function(){
+    if(!this.ok){return;}
+    var vs=[];try{vs=window.speechSynthesis.getVoices()||[];}catch(e){}
+    if(!vs.length){return;}
+    var us=vs.filter(function(v){return /^en[-_]US$/i.test(v.lang);});
+    var pref=/(Samantha|Google US English|Aria|Jenny|Zira|Allison|Ava|Joanna|Kendra|Salli|Ivy|Kimberly|Nicky)/i;
+    var found=null;
+    for(var i=0;i<us.length;i++){if(pref.test(us[i].name)){found=us[i];break;}}
+    this.voice=found||us[0]||vs.filter(function(v){return /^en/i.test(v.lang);})[0]||null;
+  },
+  say:function(text,done,el){
+    var self=this;
+    if(!this.ok){toast('Tu dispositivo no puede hablar. Prueba con Chrome, Edge o Safari.');if(done){done();}return;}
+    try{window.speechSynthesis.cancel();}catch(e){}
+    $$('.speaking').forEach(function(x){x.classList.remove('speaking');});
+    var u=new window.SpeechSynthesisUtterance(text);
+    u.lang='en-US';
+    if(this.voice){u.voice=this.voice;}
+    u.rate=this.slow?0.6:0.88;u.pitch=1.08;u.volume=1;
+    if(el){el.classList.add('speaking');}
+    var fin=function(ok){
+      if(el){el.classList.remove('speaking');}
+      var i=self.keep.indexOf(u);if(i>-1){self.keep.splice(i,1);}
+      if(ok&&done){done();}
+    };
+    u.onend=function(){fin(true);};
+    u.onerror=function(){fin(false);};
+    this.keep.push(u);
+    setTimeout(function(){try{window.speechSynthesis.speak(u);}catch(e){fin(false);}},40);
+  },
+  seq:function(lines,done,els){
+    var self=this,i=0;
+    var step=function(){
+      if(i>=lines.length){if(done){done();}return;}
+      var k=i++;
+      self.say(lines[k],step,els?els[k]:null);
+    };
+    step();
+  }
+};
+if(TTS.ok){TTS.load();try{window.speechSynthesis.onvoiceschanged=function(){TTS.load();};}catch(e){}}
+
+/* ---------- sound effects & instrument synths (Web Audio) ---------- */
+var AC=null;
+function ac(){
+  try{
+    if(!AC){var C=window.AudioContext||window.webkitAudioContext;if(C){AC=new C();}}
+    if(AC&&AC.state==='suspended'){AC.resume();}
+  }catch(e){}
+  return AC;
+}
+function tone(freq,t0,dur,type,vol){
+  var c=ac();if(!c){return;}
+  var o=c.createOscillator(),g=c.createGain();
+  o.type=type||'sine';o.frequency.value=freq;
+  var t=c.currentTime+t0,v=vol||0.12;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(v,t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+0.05);
+}
+function sfx(k){
+  try{
+    if(k==='ok'){tone(660,0,.12,'triangle');tone(880,.1,.12,'triangle');tone(1100,.2,.2,'triangle');}
+    else if(k==='bad'){tone(220,0,.18,'sine',.1);tone(180,.14,.22,'sine',.1);}
+    else if(k==='win'){[523,659,784,1046].forEach(function(f,i){tone(f,i*.12,.25,'triangle');});}
+    else if(k==='pop'){tone(900,0,.08,'sine',.08);}
+  }catch(e){}
+}
+function noiseBuf(c,secs){
+  var n=Math.floor(c.sampleRate*secs),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);
+  for(var i=0;i<n;i++){d[i]=Math.random()*2-1;}
+  return b;
+}
+function synth(kind){
+  var c=ac();if(!c){toast('Tu dispositivo no puede reproducir este sonido.');return;}
+  var t=c.currentTime;
+  try{
+    if(kind==='rain'){
+      var src=c.createBufferSource();src.buffer=noiseBuf(c,3);
+      var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=4200;bp.Q.value=0.8;
+      var g=c.createGain();g.gain.setValueAtTime(0,t);
+      for(var i=0;i<70;i++){g.gain.setTargetAtTime(Math.random()*0.22*(1-i/80),t+i*0.04,0.015);}
+      g.gain.setTargetAtTime(0,t+2.9,0.1);
+      src.connect(bp);bp.connect(g);g.connect(c.destination);src.start(t);src.stop(t+3.2);
+    }else if(kind==='thunder'){
+      var s2=c.createBufferSource();s2.buffer=noiseBuf(c,3.2);
+      var lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=220;
+      var g2=c.createGain();g2.gain.setValueAtTime(0.0001,t);
+      g2.gain.exponentialRampToValueAtTime(0.9,t+0.08);
+      for(var j=1;j<10;j++){g2.gain.exponentialRampToValueAtTime(0.25+Math.random()*0.5,t+0.08+j*0.2);}
+      g2.gain.exponentialRampToValueAtTime(0.0001,t+3.1);
+      s2.connect(lp);lp.connect(g2);g2.connect(c.destination);s2.start(t);s2.stop(t+3.2);
+      tone(55,0,2.5,'sine',0.3);
+    }else if(kind==='vuvuzela'){
+      var o=c.createOscillator();o.type='sawtooth';o.frequency.value=233;
+      var lf=c.createOscillator();lf.frequency.value=5;var lg=c.createGain();lg.gain.value=3;lf.connect(lg);lg.connect(o.frequency);
+      var f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=1100;
+      var g3=c.createGain();g3.gain.setValueAtTime(0.0001,t);g3.gain.exponentialRampToValueAtTime(0.2,t+0.1);g3.gain.setValueAtTime(0.2,t+1.4);g3.gain.exponentialRampToValueAtTime(0.0001,t+1.8);
+      o.connect(f);f.connect(g3);g3.connect(c.destination);o.start(t);lf.start(t);o.stop(t+1.9);lf.stop(t+1.9);
+    }else if(kind==='didgeridoo'){
+      var o2=c.createOscillator();o2.type='sawtooth';o2.frequency.value=72;
+      var f2=c.createBiquadFilter();f2.type='bandpass';f2.Q.value=3;
+      f2.frequency.setValueAtTime(350,t);f2.frequency.linearRampToValueAtTime(1100,t+0.5);f2.frequency.linearRampToValueAtTime(350,t+1);
+      f2.frequency.linearRampToValueAtTime(1100,t+1.5);f2.frequency.linearRampToValueAtTime(350,t+2);
+      var g4=c.createGain();g4.gain.setValueAtTime(0.0001,t);g4.gain.exponentialRampToValueAtTime(0.5,t+0.15);g4.gain.setValueAtTime(0.5,t+1.9);g4.gain.exponentialRampToValueAtTime(0.0001,t+2.4);
+      o2.connect(f2);f2.connect(g4);g4.connect(c.destination);o2.start(t);o2.stop(t+2.5);
+      tone(1800,1.2,.12,'sine',.05);tone(2300,1.35,.1,'sine',.05);tone(2000,1.6,.12,'sine',.05);
+    }
+  }catch(e){}
+}
+
+/* ---------- confetti, stars ---------- */
+function confetti(){
+  if(reduce){return;}
+  try{
+    var cv=$('#confetti');var ctx=cv.getContext('2d');if(!ctx){return;}
+    cv.width=window.innerWidth;cv.height=window.innerHeight;
+    var cols=['#ff4fa0','#9b4dff','#ffc531','#22c28f','#ffd6ea','#e6d2ff'];
+    var ps=[];
+    for(var i=0;i<130;i++){ps.push({x:cv.width/2+(Math.random()-.5)*220,y:cv.height*0.62,vx:(Math.random()-.5)*15,vy:-Math.random()*17-6,s:6+Math.random()*8,c:cols[rnd(cols.length)],r:Math.random()*6,vr:(Math.random()-.5)*.4});}
+    var f=0;
+    (function loop(){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ps.forEach(function(p){p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);ctx.restore();});
+      f++;
+      if(f<120){requestAnimationFrame(loop);}else{ctx.clearRect(0,0,cv.width,cv.height);}
+    })();
+  }catch(e){}
+}
+var stars=0;
+function addStars(n){
+  var prev=stars;stars+=n;
+  $('#starCount').textContent=stars;
+  var d=$('#dipStars');if(d){d.textContent=stars;}
+  var b=$('#starBox');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+  toast('⭐ +'+n+(n>1?' estrellas':' estrella'));
+  if(Math.floor(stars/10)>Math.floor(prev/10)){confetti();sfx('win');}
+}
+
+/* ---------- data ---------- */
+var W=[
+  {w:'sunny',es:'soleado',e:'☀️',s:"It's sunny.",pat:1},
+  {w:'cloudy',es:'nublado',e:'☁️',s:"It's cloudy.",pat:1},
+  {w:'rainy',es:'lluvioso',e:'🌧️',s:"It's rainy.",pat:1},
+  {w:'raining',es:'lloviendo',e:'☔',s:"It's raining.",pat:1},
+  {w:'snowing',es:'nevando',e:'❄️',s:"It's snowing.",pat:1},
+  {w:'windy',es:'ventoso',e:'💨',s:"It's windy.",pat:1},
+  {w:'rainbow',es:'arcoíris',e:'🌈',s:"I can see a rainbow!"},
+  {w:'hot',es:'caluroso',e:'🥵',s:"It's hot.",pat:1},
+  {w:'cold',es:'frío',e:'🥶',s:"It's cold.",pat:1},
+  {w:'wet',es:'mojado, húmedo',e:'💦',s:"It's wet.",pat:1},
+  {w:'dry',es:'seco',e:'🏜️',s:"It's dry.",pat:1},
+  {w:'snowy',es:'con nieve',e:'⛄',s:"It's snowy.",pat:1}
+];
+function byWord(w){for(var i=0;i<W.length;i++){if(W[i].w===w){return W[i];}}return null;}
+function sentenceFor(w){var x=byWord(w);return x?x.s:("It's "+w+".");}
+
+/* quiz builder */
+function mkItems(arr){
+  return arr.map(function(it){
+    return {q:it.q,es:it.es,pic:it.pic,opts:it.opts.map(function(t,i){return {t:t,ok:i===it.a,full:(i===it.a&&it.full)?it.full:''};})};
+  });
+}
+function quizHTML(items){
+  return items.map(function(it,i){
+    return '<div class="qgroup" data-i="'+i+'">'+
+      (it.pic?'<div class="qpic" aria-hidden="true">'+it.pic+'</div>':'')+
+      '<div class="qtext say" data-say="'+esc(it.q.replace(/_+/g,'blank'))+'"><span class="qn">'+(i+1)+'</span><span class="qbody">'+esc(it.q)+'</span></div>'+
+      (it.es?'<div class="es-note">'+esc(it.es)+'</div>':'')+
+      '<div class="opts">'+it.opts.map(function(o){return '<button class="opt" data-ok="'+(o.ok?1:0)+'" data-text="'+esc(o.t)+'"'+(o.full?' data-full="'+esc(o.full)+'"':'')+'>'+esc(o.t)+'</button>';}).join('')+'</div>'+
+      '<div class="fb" aria-live="polite"></div></div>';
+  }).join('');
+}
+var PRAISE=['Great job!','Excellent!','Super!','Awesome!','Perfect!','Well done!'];
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('.opt'):null;
+  if(!b||b.disabled){return;}
+  var g=b.closest('.qgroup');if(!g||g.dataset.done){return;}
+  var fb=$('.fb',g);
+  if(b.dataset.ok==='1'){
+    g.dataset.done='1';b.classList.add('good');
+    $$('.opt',g).forEach(function(x){x.disabled=true;});
+    var full=b.dataset.full;
+    if(full){var qb=$('.qbody',g);if(qb){qb.textContent=full;}var qt=$('.qtext',g);if(qt){qt.dataset.say=full;}}
+    TTS.say(full||b.dataset.text);
+    var firstTry=!g.dataset.missed;
+    fb.className='fb ok';fb.textContent=PRAISE[rnd(PRAISE.length)]+(firstTry?' ⭐':'');
+    sfx('ok');
+    if(firstTry){addStars(1);}
+  }else{
+    b.classList.add('bad');b.disabled=true;g.dataset.missed='1';
+    fb.className='fb no';fb.textContent='¡Casi! Escucha y prueba otra vez.';
+    sfx('bad');TTS.say(b.dataset.text);
+  }
+});
+
+/* generic speak on [data-say] */
+document.addEventListener('click',function(e){
+  var t=e.target.closest?e.target.closest('[data-say]'):null;
+  if(!t){return;}
+  if(t.closest('.opt')){return;}
+  var txt=t.dataset.say;if(!txt){return;}
+  TTS.say(txt,null,t);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'||e.key===' '){
+    var t=e.target;
+    if(t&&t.matches&&t.matches('[data-say]')&&!/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(t.tagName)){e.preventDefault();t.click();}
+  }
+});
+function enhance(){
+  $$('[data-say]').forEach(function(el){
+    if(!/^(BUTTON|A|INPUT|SELECT)$/.test(el.tagName)){
+      if(!el.hasAttribute('tabindex')){el.setAttribute('tabindex','0');}
+      if(!el.hasAttribute('role')){el.setAttribute('role','button');}
+    }
+  });
+}
+
+/* ---------- header / hero ---------- */
+var NAV=[['s1','Clima'],['s2','Postales'],['s3','Escucha'],['s4','Lugares'],['s5','Ayer y hoy'],['s6','Ropa'],['s7','Sonidos'],['s8','Detective'],['s9','Instrumentos'],['s10','Invitación'],['s11','Juegos'],['s12','Diploma']];
+function initHeader(){
+  $('#nav').innerHTML=NAV.map(function(n){return '<button class="navb" data-go="'+n[0]+'">'+n[1]+'</button>';}).join('');
+  $('#nav').addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(b){go(b.dataset.go);}});
+  $('#slowBtn').addEventListener('click',function(){TTS.slow=!TTS.slow;this.setAttribute('aria-pressed',TTS.slow?'true':'false');TTS.say(TTS.slow?'Slow voice on.':'Normal voice.');});
+  $('#startBtn').addEventListener('click',function(){TTS.say("Let's start!");go('s1');});
+  $('#voiceBtn').addEventListener('click',function(){TTS.say("Hello! Let's learn about the weather!");});
+  var sky=$('#sky'),h='';
+  for(var i=0;i<22;i++){h+='<span class="drop" style="left:'+(Math.random()*100).toFixed(1)+'%;animation-delay:'+(-Math.random()*2).toFixed(2)+'s;animation-duration:'+(1.2+Math.random()).toFixed(2)+'s"></span>';}
+  sky.insertAdjacentHTML('beforeend',h);
+}
+
+/* ---------- 1 vocabulary ---------- */
+function initVocab(){
+  $('#wgrid').innerHTML=W.map(function(x,i){return '<button class="wcard c'+(i%4)+'" data-w="'+i+'" aria-label="'+esc(x.w)+'"><span class="we">'+x.e+'</span><span class="ww">'+esc(x.w)+'</span><span class="wes">'+esc(x.es)+'</span></button>';}).join('');
+  $('#wgrid').addEventListener('click',function(e){
+    var b=e.target.closest('.wcard');if(!b){return;}
+    var x=W[+b.dataset.w];TTS.say(x.w+'. '+x.s,null,b);
+  });
+  var pat=W.filter(function(x){return x.pat;});
+  $('#patChips').innerHTML=pat.map(function(x,i){return '<button class="chip'+(x.w==='windy'?' on':'')+'" data-p="'+i+'">'+x.e+' '+esc(x.w)+'</button>';}).join('');
+  $('#patChips').addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b){return;}
+    var x=pat[+b.dataset.p];
+    $$('#patChips .chip').forEach(function(c){c.classList.remove('on');});b.classList.add('on');
+    var a=$('#patAns');a.textContent=x.s;a.dataset.say=x.s;
+    TTS.say(x.s,null,a);
+  });
+}
+
+/* ---------- 2 postcards ---------- */
+var PC=[
+  {e:'🏖️',stamp:'BEACH',lines:['Dear Mati,',"I'm on holiday at the beach.","It's hot and sunny today.",'Look at me in my sunhat!','Sofía'],es:'Querido Mati: estoy de vacaciones en la playa. Hoy hace calor y hay sol. ¡Mírame con mi sombrero! Sofía.'},
+  {e:'🏔️',stamp:'MOUNTAINS',lines:['Dear Fran,',"We're on holiday in the mountains.","It's cold and it's snowing.",'We can make a snowman!','Mati and Javi'],es:'Querida Fran: estamos de vacaciones en las montañas. Hace frío y está nevando. ¡Podemos hacer un muñeco de nieve! Mati y Javi.'},
+  {e:'🪁',stamp:'COUNTRYSIDE',lines:['Dear Lola,',"I'm on holiday in the countryside.","It's windy and I can fly my kite.","It's very dry here.",'Fran'],es:'Querida Lola: estoy de vacaciones en el campo. Hay viento y puedo volar mi volantín. Aquí está muy seco. Fran.'},
+  {e:'🌈',stamp:'LAKE',lines:['Dear Grandma and Grandpa,',"I'm on holiday at the lake with my dog, Coco.","It's cloudy but I can see a rainbow!","It's beautiful.",'Lola'],es:'Queridos abuelos: estoy de vacaciones en el lago con mi perro Coco. Está nublado, ¡pero veo un arcoíris! Es hermoso. Lola.'}
+];
+function initPostcards(){
+  $('#pcgrid').innerHTML=PC.map(function(p,i){
+    return '<article class="pc t'+(i%2)+'" data-pc="'+i+'"><div class="pc-top"><span class="pc-scene" aria-hidden="true">'+p.e+'</span><span class="stamp">'+p.stamp+'</span></div>'+
+      '<div class="pc-text">'+p.lines.map(function(l){return '<div class="say" data-say="'+esc(l)+'">'+esc(l)+'</div>';}).join('')+'</div>'+
+      '<div class="pc-es" hidden>'+esc(p.es)+'</div>'+
+      '<div class="pc-btns"><button class="btn small" data-all="'+i+'">▶ Escuchar toda</button><button class="btn small purple" data-tr="'+i+'">Traducir</button></div></article>';
+  }).join('');
+  $('#pcgrid').addEventListener('click',function(e){
+    var a=e.target.closest('[data-all]');
+    if(a){var card=a.closest('.pc');var els=$$('.say',card);TTS.seq(PC[+a.dataset.all].lines,null,els);return;}
+    var t=e.target.closest('[data-tr]');
+    if(t){var es=$('.pc-es',t.closest('.pc'));es.hidden=!es.hidden;t.textContent=es.hidden?'Traducir':'Ocultar';}
+  });
+  var names=['Sofía','Mati and Javi','Fran','Lola'];
+  var places=['At the beach','In the mountains','In the countryside','At the lake'];
+  $('#quizPost').innerHTML=quizHTML(mkItems([
+    {q:'Who has got a pet?',es:'¿Quién tiene una mascota?',opts:names,a:3},
+    {q:"Where's Fran on holiday?",es:'¿Dónde está Fran de vacaciones?',opts:places,a:2},
+    {q:"Who's on holiday in the mountains?",es:'¿Quién está de vacaciones en las montañas?',opts:names,a:1},
+    {q:"Where's Sofía on holiday?",es:'¿Dónde está Sofía de vacaciones?',opts:places,a:0}
+  ]));
+  $('#quizWho').innerHTML=quizHTML(mkItems([
+    {q:"It's windy.",pic:'💨',opts:names,a:2},
+    {q:"It's cold and snowing.",pic:'⛄',opts:names,a:1},
+    {q:"It's cloudy but there's a rainbow.",pic:'🌈',opts:names,a:3},
+    {q:"It's hot and sunny.",pic:'🌞',opts:names,a:0}
+  ]));
+}
+
+/* ---------- 3 listening game ---------- */
+var LGW=['sunny','cloudy','rainy','snowing','windy','rainbow','hot','cold'].map(byWord);
+var lg={mode:'pick',on:false,n:0,score:0,cur:null,answered:false,tk:0};
+function lgNew(){
+  lg.answered=false;lg.tk++;
+  if(lg.mode==='pick'){
+    var t=LGW[rnd(LGW.length)];
+    var others=shuffle(LGW.filter(function(x){return x!==t;})).slice(0,5);
+    lg.cur={t:t,opts:shuffle([t].concat(others))};
+  }else{
+    var shown=LGW[rnd(LGW.length)];
+    var same=Math.random()<0.5;
+    var said=same?shown:shuffle(LGW.filter(function(x){return x!==shown;}))[0];
+    lg.cur={shown:shown,said:said,same:same};
+  }
+}
+function lgHear(){
+  if(!lg.cur){return;}
+  if(lg.mode==='pick'){TTS.say(lg.cur.t.w);}
+  else{TTS.say(sentenceFor(lg.cur.said.w));}
+}
+function lgRender(){
+  var box=$('#lg');
+  if(!lg.on){box.innerHTML='<p class="es">8 rondas. ¡Escucha con mucha atención!</p><button class="btn big" data-lg="start">▶ ¡Jugar!</button>';return;}
+  if(lg.n>=8){
+    box.innerHTML='<div class="trophy" aria-hidden="true">🏆</div><h3>¡Terminaste! Acertaste '+lg.score+' de 8</h3><button class="btn big" data-lg="start">Jugar otra vez</button>';
+    return;
+  }
+  var top='<div class="lg-top"><span>Ronda '+(lg.n+1)+' / 8</span><span>⭐ '+lg.score+'</span></div>';
+  if(lg.mode==='pick'){
+    box.innerHTML=top+'<button class="btn big" data-lg="hear">🔊 Escuchar</button><div class="lgrid">'+
+      lg.cur.opts.map(function(o,i){return '<button class="lgopt" data-lg="ans" data-i="'+i+'" aria-label="opción '+(i+1)+'">'+o.e+'</button>';}).join('')+
+      '</div><div class="fb" id="lgFb" aria-live="polite"></div>';
+  }else{
+    box.innerHTML=top+'<div class="bigpic" aria-hidden="true">'+lg.cur.shown.e+'</div><button class="btn big" data-lg="hear">🔊 Escuchar</button>'+
+      '<div style="display:flex;gap:14px"><button class="btn mint big" data-lg="yes">Yes ✅</button><button class="btn big" data-lg="no">No ❌</button></div><div class="fb" id="lgFb" aria-live="polite"></div>';
+  }
+}
+function lgAdvance(tk){
+  if(tk!==lg.tk){return;}
+  lg.n++;
+  if(lg.n>=8){lg.tk++;lgRender();if(lg.score===8){confetti();sfx('win');}return;}
+  lgNew();lgRender();after(250,lgHear);
+}
+function lgResult(good,sayText){
+  if(lg.answered){return;}
+  lg.answered=true;
+  var tk=lg.tk;
+  var fb=$('#lgFb');
+  if(good){lg.score++;addStars(1);sfx('ok');if(fb){fb.className='fb ok';fb.textContent=PRAISE[rnd(PRAISE.length)];}}
+  else{sfx('bad');if(fb){fb.className='fb no';fb.textContent='Casi. Era: '+sayText;}}
+  var next=function(){after(500,function(){lgAdvance(tk);});};
+  var called=false;var once=function(){if(!called){called=true;next();}};
+  TTS.say(sayText,once);
+  after(3200,once);
+}
+function initListen(){
+  $('#lg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-lg]');if(!b){return;}
+    var a=b.dataset.lg;
+    if(a==='start'){lg.on=true;lg.n=0;lg.score=0;lgNew();lgRender();after(250,lgHear);}
+    else if(a==='hear'){lgHear();}
+    else if(a==='ans'&&!lg.answered){
+      var o=lg.cur.opts[+b.dataset.i];var good=(o===lg.cur.t);
+      b.classList.add(good?'good':'bad');
+      if(!good){$$('.lgopt',$('#lg')).forEach(function(x,i){if(lg.cur.opts[i]===lg.cur.t){x.classList.add('good');}});}
+      lgResult(good,lg.cur.t.w);
+    }
+    else if((a==='yes'||a==='no')&&!lg.answered){
+      var good2=((a==='yes')===lg.cur.same);
+      lgResult(good2,sentenceFor(lg.cur.said.w));
+    }
+  });
+  $$('[data-lgmode]').forEach(function(b){
+    b.addEventListener('click',function(){
+      lg.mode=b.dataset.lgmode;lg.on=false;lg.n=0;lg.tk++;
+      $$('[data-lgmode]').forEach(function(x){x.classList.toggle('on',x===b);});
+      lgRender();
+    });
+  });
+  lgRender();
+}
+
+/* ---------- 4 places ---------- */
+var BANK=['snowing','raining','windy','cloudy','wet','hot','rainbow'];
+var PL=[
+  {e:'🏔️',parts:["It's ",0," in the mountains."],ans:['snowing']},
+  {e:'🌲',parts:['In the forest it\'s ',0,'.'],ans:['raining']},
+  {e:'🏝️',parts:["It's ",0," on the island."],ans:['windy']},
+  {e:'🏞️',parts:["It's ",0,' and ',1,' at the lake.'],ans:['cloudy','wet']},
+  {e:'🏖️',parts:['At the beach it\'s very ',0,'.'],ans:['hot']},
+  {e:'🌾',parts:['You can see a ',0,' near the fields.'],ans:['rainbow']}
+];
+function plSentence(row,i){
+  var sels=$$('select',row),out='';
+  PL[i].parts.forEach(function(p){
+    if(typeof p==='number'){out+=(sels[p]&&sels[p].value)?sels[p].value:'blank';}else{out+=p;}
+  });
+  return out;
+}
+function initPlaces(){
+  $('#bank').innerHTML=BANK.map(function(w){return '<button class="chip say" data-say="'+esc(w)+'">'+esc(w)+'</button>';}).join('');
+  var opts='<option value="">…</option>'+BANK.map(function(w){return '<option value="'+esc(w)+'">'+esc(w)+'</option>';}).join('');
+  $('#places').innerHTML=PL.map(function(p,i){
+    return '<div class="prow" data-pl="'+i+'"><span class="pe" aria-hidden="true">'+p.e+'</span><span class="ptxt">'+p.parts.map(function(x){return typeof x==='number'?'<select class="blank" aria-label="palabra '+(x+1)+'">'+opts+'</select>':esc(x);}).join('')+'</span><button class="btn small purple" data-hear="'+i+'" aria-label="Escuchar frase">🔊</button></div>';
+  }).join('');
+  $('#places').addEventListener('change',function(e){
+    if(e.target.tagName==='SELECT'&&e.target.value){TTS.say(e.target.value);}
+    var row=e.target.closest('.prow');if(row){row.classList.remove('ok','no');}
+  });
+  $('#places').addEventListener('click',function(e){
+    var b=e.target.closest('[data-hear]');if(!b){return;}
+    var i=+b.dataset.hear;TTS.say(plSentence(b.closest('.prow'),i));
+  });
+  $('#chkPlaces').addEventListener('click',function(){
+    var okN=0,empty=0;
+    $$('.prow',$('#places')).forEach(function(row,i){
+      var sels=$$('select',row).map(function(s){return s.value;});
+      if(sels.some(function(v){return !v;})){empty++;row.classList.remove('ok','no');return;}
+      var good=sels.slice().sort().join('|')===PL[i].ans.slice().sort().join('|');
+      row.classList.toggle('ok',good);row.classList.toggle('no',!good);
+      if(good){okN++;if(!row.dataset.paid){row.dataset.paid='1';addStars(1);}}
+    });
+    var fb=$('#placesFb');
+    if(empty){fb.className='fb no';fb.textContent='Faltan '+empty+' frases por completar.';sfx('bad');}
+    else if(okN===PL.length){fb.className='fb ok';fb.textContent='¡Todo correcto! Excellent!';sfx('win');confetti();TTS.say('Excellent!');}
+    else{fb.className='fb no';fb.textContent='Acertaste '+okN+' de '+PL.length+'. Revisa las frases en rojo.';sfx('bad');}
+  });
+  var scenes=[
+    {pic:'🌴🌬️',place:'the beach',a:"It's windy."},
+    {pic:'🏔️⛷️',place:'the mountains',a:"It's snowing."},
+    {pic:'🏙️☁️',place:'the city',a:"It's cloudy."},
+    {pic:'🌲🌧️',place:'the forest',a:"It's raining."},
+    {pic:'🌾🌞',place:'the fields',a:"It's sunny."}
+  ];
+  var all=["It's windy.","It's snowing.","It's cloudy.","It's raining.","It's sunny."];
+  $('#scenes').innerHTML=quizHTML(mkItems(scenes.map(function(s){
+    var wrong=shuffle(all.filter(function(x){return x!==s.a;})).slice(0,2);
+    var opts=shuffle([s.a].concat(wrong));
+    return {q:"What's the weather like at "+s.place+"?",pic:s.pic,opts:opts,a:opts.indexOf(s.a)};
+  })));
+}
+
+/* ---------- 5 was / were ---------- */
+var SC=[
+  {name:'Luna',pl:false,y:{w:'wet and windy',e:'🌧️💨',p:'at the park',pe:'🌳'},t:{w:'hot and sunny',e:'☀️',p:'at home',pe:'🏠'}},
+  {name:'Tomás and Pipo',pl:true,y:{w:'cold and snowy',e:'❄️⛄',p:'in the mountains',pe:'🏔️'},t:{w:'hot and sunny',e:'☀️',p:'at the beach',pe:'🏖️'}},
+  {name:'Sofía',pl:false,y:{w:'cloudy and cold',e:'☁️🥶',p:'at school',pe:'🏫'},t:{w:'sunny and dry',e:'🌞',p:'at the lake',pe:'🏞️'}}
+];
+var tm={i:0,day:'y'};
+function renderTM(speak){
+  var s=SC[tm.i],st=tm.day==='y'?s.y:s.t,html,txt;
+  if(tm.day==='y'){
+    var v=s.pl?'were':'was';
+    html='Yesterday it <mark>was</mark> '+esc(st.w)+'. '+esc(s.name)+' <mark>'+v+'</mark> '+esc(st.p)+'.';
+    txt='Yesterday it was '+st.w+'. '+s.name+' '+v+' '+st.p+'.';
+  }else{
+    var v2=s.pl?'are':'is';
+    html='Today it <mark>is</mark> '+esc(st.w)+'. '+esc(s.name)+' <mark>'+v2+'</mark> '+esc(st.p)+'.';
+    txt='Today it is '+st.w+'. '+s.name+' '+v2+' '+st.p+'.';
+  }
+  var sc=$('#tmScene');sc.innerHTML='<span aria-hidden="true">'+st.e+'</span><span aria-hidden="true">'+st.pe+'</span>';
+  sc.classList.remove('swap');void sc.offsetWidth;sc.classList.add('swap');
+  var tx=$('#tmText');tx.innerHTML=html;tx.dataset.say=txt;
+  $$('#tmChars .chip').forEach(function(c,k){c.classList.toggle('on',k===tm.i);});
+  if(speak){TTS.say(txt,null,tx);}
+}
+function initPast(){
+  $('#study').innerHTML=
+    '<div class="sbox a"><div class="big">was</div><p>I, he, she, it</p><p class="say" data-say="It was cold yesterday.">It was cold yesterday.</p></div>'+
+    '<div class="sbox b"><div class="big">were</div><p>you, we, they</p><p class="say" data-say="They were at the park yesterday.">They were at the park yesterday.</p></div>'+
+    '<div class="sbox c"><div class="big">is</div><p>hoy: he, she, it</p><p class="say" data-say="It is sunny today.">It\'s sunny today.</p></div>'+
+    '<div class="sbox d"><div class="big">are</div><p>hoy: you, we, they</p><p class="say" data-say="They are at home today.">They are at home today.</p></div>';
+  $('#tmChars').innerHTML=SC.map(function(s,i){return '<button class="chip" data-sc="'+i+'">'+esc(s.name)+'</button>';}).join('');
+  $('#tmChars').addEventListener('click',function(e){var b=e.target.closest('[data-sc]');if(!b){return;}tm.i=+b.dataset.sc;sfx('pop');renderTM(true);});
+  $$('[data-day]').forEach(function(b){b.addEventListener('click',function(){tm.day=b.dataset.day;sfx('pop');renderTM(true);});});
+  renderTM(false);
+  $('#quizWas').innerHTML=quizHTML(mkItems([
+    {q:'It ___ rainy yesterday.',es:'Ayer (pasado)',opts:['was','were','is','are'],a:0,full:'It was rainy yesterday.'},
+    {q:'We ___ at the beach yesterday.',es:'Ayer (pasado)',opts:['was','were','is','are'],a:1,full:'We were at the beach yesterday.'},
+    {q:'It ___ sunny today.',es:'Hoy (presente)',opts:['was','were','is','are'],a:2,full:'It is sunny today.'},
+    {q:'They ___ at home today.',es:'Hoy (presente)',opts:['was','were','is','are'],a:3,full:'They are at home today.'},
+    {q:'I ___ at the park yesterday.',es:'Ayer (pasado)',opts:['was','were','is','are'],a:0,full:'I was at the park yesterday.'},
+    {q:'You ___ at school yesterday.',es:'Ayer (pasado)',opts:['was','were','is','are'],a:1,full:'You were at school yesterday.'}
+  ]));
+  var WW=['at the park','at the beach','at the library','at the sports centre','at school','at home'];
+  $('#wwChips').innerHTML=WW.map(function(p,i){return '<button class="chip'+(i===0?' on':'')+'" data-ww="'+i+'">'+esc(p)+'</button>';}).join('');
+  $('#wwChips').addEventListener('click',function(e){
+    var b=e.target.closest('[data-ww]');if(!b){return;}
+    $$('#wwChips .chip').forEach(function(c){c.classList.remove('on');});b.classList.add('on');
+    var s='I was '+WW[+b.dataset.ww]+'.';var a=$('#wwAns');a.textContent=s;a.dataset.say=s;TTS.say(s,null,a);
+  });
+}
+
+/* ---------- 6 clothes ---------- */
+var CL=[
+  {k:'hat',n:'a hat',e:'🧢',es:'gorro / gorra',t:'any'},
+  {k:'coat',n:'a coat',e:'🧥',es:'abrigo',t:'cold'},
+  {k:'sweater',n:'a sweater',e:'🧶',es:'suéter',t:'cold'},
+  {k:'scarf',n:'a scarf',e:'🧣',es:'bufanda',t:'cold'},
+  {k:'gloves',n:'gloves',e:'🧤',es:'guantes',t:'cold'},
+  {k:'T-shirt',n:'a T-shirt',e:'👕',es:'polera',t:'hot'},
+  {k:'swim shorts',n:'swim shorts',e:'🩳',es:'traje de baño',t:'hot'}
+];
+function clByKey(k){for(var i=0;i<CL.length;i++){if(CL[i].k===k){return CL[i];}}return null;}
+var DR=[
+  {w:"It's hot and sunny.",es:'Hace calor y hay sol. ¿Qué ropa necesita?',e:'☀️',need:['T-shirt','swim shorts'],ban:['coat','sweater','scarf','gloves']},
+  {w:"It's cold and snowing.",es:'Hace frío y está nevando. ¿Qué ropa necesita?',e:'❄️',need:['coat','scarf','gloves'],ban:['T-shirt','swim shorts']},
+  {w:"It's cold and windy.",es:'Hace frío y hay viento. ¿Qué ropa necesita?',e:'💨',need:['coat','scarf'],ban:['T-shirt','swim shorts']},
+  {w:"It's hot and dry.",es:'Hace calor y todo está seco. ¿Qué ropa necesita?',e:'🏜️',need:['T-shirt','swim shorts'],ban:['coat','sweater','scarf','gloves']}
+];
+var dr={i:0,sel:{}};
+function drRender(){
+  var L=DR[dr.i];
+  $('#drEs').textContent='Nivel '+(dr.i+1)+' de '+DR.length+': '+L.es;
+  var s=$('#drSay');s.textContent=L.e+' '+L.w;s.dataset.say=L.w;
+  $('#dgrid').innerHTML=CL.map(function(c){return '<button class="cl'+(dr.sel[c.k]?' on':'')+'" data-k="'+esc(c.k)+'"><span class="ce">'+c.e+'</span>'+esc(c.k)+'<small>'+esc(c.es)+'</small></button>';}).join('');
+  var worn=CL.filter(function(c){return dr.sel[c.k];}).map(function(c){return c.e;}).join(' ');
+  $('#avatar').innerHTML='<span aria-hidden="true">👧</span><span class="worn" aria-hidden="true">'+(worn||'…')+'</span>';
+  $('#drFb').textContent='';$('#drFb').className='fb';
+  $('#drNext').hidden=true;$('#drCheck').hidden=false;
+}
+function np(k){var c=clByKey(k);return c?c.n:k;}
+function initClothes(){
+  $('#cgrid').innerHTML=CL.map(function(c,i){return '<button class="cl" data-c="'+i+'"><span class="ce">'+c.e+'</span>'+esc(c.k)+'<small>'+esc(c.es)+'</small></button>';}).join('');
+  $('#cgrid').addEventListener('click',function(e){var b=e.target.closest('[data-c]');if(!b){return;}TTS.say(CL[+b.dataset.c].k,null,b);});
+  $('#dgrid').addEventListener('click',function(e){
+    var b=e.target.closest('[data-k]');if(!b){return;}
+    var k=b.dataset.k;dr.sel[k]=!dr.sel[k];
+    var worn=CL.filter(function(c){return dr.sel[c.k];}).map(function(c){return c.e;}).join(' ');
+    b.classList.toggle('on',!!dr.sel[k]);
+    $('#avatar').innerHTML='<span aria-hidden="true">👧</span><span class="worn" aria-hidden="true">'+(worn||'…')+'</span>';
+    TTS.say(k);
+  });
+  $('#drCheck').addEventListener('click',function(){
+    var L=DR[dr.i],fb=$('#drFb');
+    var missing=L.need.filter(function(k){return !dr.sel[k];});
+    var extra=L.ban.filter(function(k){return dr.sel[k];});
+    if(!missing.length&&!extra.length){
+      var worn=CL.filter(function(c){return dr.sel[c.k];}).map(function(c){return np(c.k);});
+      var sent=L.w+' She is in '+worn.join(', ').replace(/, ([^,]*)$/,' and $1')+'.';
+      fb.className='fb ok';fb.textContent='¡Perfecto! '+sent;
+      sfx('ok');addStars(1);TTS.say(sent);
+      if(dr.i<DR.length-1){$('#drNext').hidden=false;}else{confetti();sfx('win');}
+      $('#drCheck').hidden=true;
+    }else{
+      fb.className='fb no';
+      fb.textContent=(missing.length?'Te falta: '+missing.join(', ')+'. ':'')+(extra.length?'No necesita: '+extra.join(', ')+'.':'');
+      sfx('bad');
+    }
+  });
+  $('#drNext').addEventListener('click',function(){dr.i++;dr.sel={};drRender();TTS.say(DR[dr.i].w);});
+  drRender();
+
+  /* sentence maker */
+  var wOpts=['hot','cold','sunny','rainy','snowy','windy','wet','dry'];
+  var cOpts=CL.map(function(c){return c.k;});
+  var wh=wOpts.map(function(w){return '<option value="'+esc(w)+'">'+esc(w)+'</option>';}).join('');
+  var ch=cOpts.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
+  $('#smW1').innerHTML=wh;$('#smW2').innerHTML=wh;$('#smC1').innerHTML=ch;$('#smC2').innerHTML=ch;
+  $('#smW1').value='hot';$('#smW2').value='sunny';$('#smC1').value='T-shirt';$('#smC2').value='swim shorts';
+  var upd=function(speak){
+    var w1=$('#smW1').value,w2=$('#smW2').value,c1=$('#smC1').value,c2=$('#smC2').value;
+    var s='It was '+(w1===w2?w1:w1+' and '+w2)+'. She was in '+(c1===c2?np(c1):np(c1)+' and '+np(c2))+'.';
+    var o=$('#smOut');o.textContent=s;o.dataset.say=s;
+    if(speak){TTS.say(s,null,o);}
+  };
+  ['smW1','smW2','smC1','smC2'].forEach(function(id){$('#'+id).addEventListener('change',function(){upd(true);});});
+  upd(false);
+
+  /* chant */
+  var CH=['Hat, coat, scarf and gloves,','It was cold and snowy today!','Hat, coat, scarf and gloves,','We were ready to play!','T-shirt, shorts and sunny hat,','It was hot and dry today!','Rainbow, rainbow, shine for me,','Weather, weather, one, two, three!'];
+  $('#chant').innerHTML=CH.map(function(l){return '<div class="kline say" data-say="'+esc(l)+'">'+esc(l)+'</div>';}).join('');
+  $('#singBtn').addEventListener('click',function(){TTS.seq(CH,null,$$('.kline',$('#chant')));});
+}
+
+/* ---------- 7 sounds & spelling ---------- */
+var SG=[
+  {t:'Sonido "air"',es:'Se escribe air, ere, ear… ¡y suena igual!',w:[['🪑','chair'],['💇‍♀️','hair'],['🐻','bear'],['🍐','pear'],['📍','there'],['❓','where']]},
+  {t:'Sonido "ee"',es:'La letra y al final suena como "i" larga. ¡Y también ee!',w:[['🐝','bee'],['🌳','tree'],['💚','green'],['☀️','sunny'],['💨','windy'],['🌧️','rainy']]},
+  {t:'Sonido "ai" (como "ái")',es:'La y de sky y fly suena como "ai".',w:[['🌤️','sky'],['🕊️','fly'],['🥧','pie'],['😭','cry']]},
+  {t:'Sonido "f" y "ff"',es:'Suena como la f en español.',w:[['🦒','giraffe'],['🐸','frog'],['🐟','fish'],['🧗','cliff']]},
+  {t:'Sonido "s" y "es"',es:'Al final, para decir muchos: s o es.',w:[['🦜','parrots'],['🐝','bees'],['🐸','frogs'],['📦','boxes'],['⌚','watches']]}
+];
+function initSounds(){
+  $('#sgroups').innerHTML=SG.map(function(g){
+    return '<div class="sg"><h4>'+esc(g.t)+'</h4><p class="es">'+esc(g.es)+'</p><div class="wchips">'+g.w.map(function(x){return '<button class="wchip say" data-say="'+esc(x[1])+'"><span aria-hidden="true">'+x[0]+'</span>'+esc(x[1])+'</button>';}).join('')+'</div></div>';
+  }).join('');
+  $('#quizRhyme').innerHTML=quizHTML(mkItems([
+    {q:'hair rhymes with…',es:'hair rima con…',opts:['bear','sun','frog','bee'],a:0},
+    {q:'sky rhymes with…',es:'sky rima con…',opts:['chair','fly','green','boxes'],a:1},
+    {q:'bee rhymes with…',es:'bee rima con…',opts:['pie','pear','tree','fish'],a:2},
+    {q:'sunny rhymes with…',es:'sunny rima con…',opts:['funny','chair','giraffe','cliff'],a:0}
+  ]));
+  var DW=['chair','bear','sunny','giraffe','rainbow'];
+  $('#dict').innerHTML=DW.map(function(w,i){return '<div class="dict-row"><button class="btn small purple" data-dw="'+i+'" aria-label="Escuchar palabra '+(i+1)+'">🔊 '+(i+1)+'</button><input id="dw'+i+'" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Escribe la palabra '+(i+1)+'"></div>';}).join('');
+  $('#dict').addEventListener('click',function(e){var b=e.target.closest('[data-dw]');if(b){TTS.say(DW[+b.dataset.dw]);}});
+  $('#dict').addEventListener('input',function(e){if(e.target.tagName==='INPUT'){e.target.classList.remove('ok','no');}});
+  $('#dictCheck').addEventListener('click',function(){
+    var okN=0;
+    DW.forEach(function(w,i){
+      var inp=$('#dw'+i);var good=inp.value.trim().toLowerCase()===w;
+      inp.classList.toggle('ok',good);inp.classList.toggle('no',!good);
+      if(good){okN++;if(!inp.dataset.paid){inp.dataset.paid='1';addStars(1);}}
+    });
+    var fb=$('#dictFb');
+    if(okN===DW.length){fb.className='fb ok';fb.textContent='¡Las 5 correctas! Excellent!';sfx('win');confetti();TTS.say('Excellent!');}
+    else{fb.className='fb no';fb.textContent='Acertaste '+okN+' de '+DW.length+'. Escucha otra vez las que están en rojo.';sfx('bad');}
+  });
+  var A=['bear','giraffe','parrot'],B=['frogs','bees','rainbows'],C=['sunny','windy','rainy'];
+  var fill=function(id,arr){$('#'+id).innerHTML=arr.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');};
+  fill('sbA',A);fill('sbB',B);fill('sbC',C);
+  var upd=function(speak){
+    var s='The '+$('#sbA').value+' paints '+$('#sbB').value+' on a '+$('#sbC').value+' day.';
+    var o=$('#sbOut');o.textContent=s;o.dataset.say=s;
+    if(speak){TTS.say(s,null,o);}
+  };
+  ['sbA','sbB','sbC'].forEach(function(id){$('#'+id).addEventListener('change',function(){upd(true);});});
+  upd(false);
+}
+
+/* ---------- 8 detective ---------- */
+function initCase(){
+  var yn=['Yes, it was.',"No, it wasn't.",'Yes, they were.',"No, they weren't."];
+  var places=['At the library.','At the park.','At the beach.','At home.'];
+  $('#quizCase').innerHTML=quizHTML(mkItems([
+    {q:'Was it sunny last Thursday?',es:'¿Estaba soleado el jueves?',opts:yn,a:1},
+    {q:'Was it rainy last Thursday?',es:'¿Estaba lluvioso el jueves?',opts:yn,a:0},
+    {q:'Was Ana at the park?',es:'¿Estaba Ana en el parque?',opts:["Yes, she was.","No, she wasn't.",'Yes, they were.',"No, they weren't."],a:1},
+    {q:'Were Beto and Caro at the park?',es:'¿Estaban Beto y Caro en el parque?',opts:yn,a:2},
+    {q:'Where was Ana at eleven o\'clock?',es:'¿Dónde estaba Ana a las once?',opts:places,a:0}
+  ]));
+}
+
+/* ---------- 9 instruments ---------- */
+var INS=[
+  {k:'rain',n:'rain stick',es:'palo de lluvia',c:'Chile',f:'percussion',l:'rain',e:'🌧️'},
+  {k:'vuvuzela',n:'vuvuzela',es:'vuvuzela',c:'South Africa',f:'wind',l:'elephants',e:'📯'},
+  {k:'thunder',n:'thunder drum',es:'tambor del trueno',c:'Indonesia',f:'percussion',l:'thunder',e:'🥁'},
+  {k:'didgeridoo',n:'didgeridoo',es:'didgeridoo',c:'Australia',f:'wind',l:'Australian birds',e:'🎶'}
+];
+function initInstruments(){
+  $('#igrid').innerHTML=INS.map(function(x,i){
+    var txt='The '+x.n+'. It is from '+x.c+'. It is a '+x.f+' instrument. It sounds like '+x.l+'.';
+    return '<div class="ins i'+i+'"><div class="ie say" data-say="'+esc(txt)+'" style="border-radius:16px;align-self:flex-start">'+x.e+'</div>'+
+      '<div class="in say" data-say="'+esc(txt)+'">'+esc(x.n)+'</div>'+
+      '<div class="es" style="color:#fff;opacity:.9">'+esc(x.es)+'</div>'+
+      '<div class="row">Country: '+esc(x.c)+'</div><div class="row">Family: '+esc(x.f)+'</div><div class="row">Sounds like: '+esc(x.l)+'</div>'+
+      '<button class="btn small" data-snd="'+x.k+'">▶ Sonido</button></div>';
+  }).join('');
+  $('#igrid').addEventListener('click',function(e){var b=e.target.closest('[data-snd]');if(b){synth(b.dataset.snd);}});
+  var countries=['Chile','South Africa','Indonesia','Australia'];
+  $('#quizCountry').innerHTML=quizHTML(mkItems(INS.map(function(x){return {q:'What country is the '+x.n+' from?',es:'¿De qué país es?',opts:countries,a:countries.indexOf(x.c)};})));
+  $('#quizFam').innerHTML=quizHTML(mkItems(INS.map(function(x){return {q:'The '+x.n+' is a…',es:'Wind = se sopla. Percussion = se golpea o se agita.',opts:['wind instrument','percussion instrument'],a:x.f==='wind'?0:1};})));
+}
+
+/* ---------- 10 invitation ---------- */
+var INV=[
+  {t:'Come to our weather party!',c:'what'},
+  {t:'Make your own paper umbrella.',c:'what'},
+  {t:'Date: Saturday, 20th June',c:'when'},
+  {t:'Time: 3 pm',c:'when'},
+  {t:"Place: Luna's garden",c:'where'},
+  {t:'See you soon!',c:null},
+  {t:'Luna and friends',c:null}
+];
+function initInvite(){
+  var pen='what';
+  $('#inv').innerHTML='<h4>You\'re invited!</h4>'+INV.map(function(s,i){return '<div><span class="seg" data-seg="'+i+'">'+esc(s.t)+'</span></div>';}).join('');
+  $('#pens').addEventListener('click',function(e){
+    var b=e.target.closest('[data-pen]');if(!b){return;}
+    pen=b.dataset.pen;$$('#pens .pen').forEach(function(x){x.classList.toggle('on',x===b);});sfx('pop');
+  });
+  $('#inv').addEventListener('click',function(e){
+    var s=e.target.closest('[data-seg]');if(!s){return;}
+    s.classList.remove('ok','no');
+    if(s.dataset.pen===pen){delete s.dataset.pen;}else{s.dataset.pen=pen;}
+    TTS.say(INV[+s.dataset.seg].t.replace(/^(Date|Time|Place):\s*/,function(m){return m.replace(':','.');}),null,s);
+  });
+  $('#invCheck').addEventListener('click',function(){
+    var okN=0;
+    $$('.seg',$('#inv')).forEach(function(s,i){
+      var want=INV[i].c,got=s.dataset.pen||null;
+      var good=(want===got);
+      s.classList.toggle('ok',good);s.classList.toggle('no',!good);
+      if(good){okN++;}
+    });
+    var fb=$('#invFb');
+    if(okN===INV.length){fb.className='fb ok';fb.textContent='¡Perfecto! Excellent!';sfx('win');confetti();addStars(3);TTS.say('Excellent!');}
+    else{fb.className='fb no';fb.textContent='Acertaste '+okN+' de '+INV.length+'. Lo que no responde What, Where ni When va sin subrayar.';sfx('bad');}
+  });
+  $('#invHear').addEventListener('click',function(){TTS.say("You're invited! Come to our weather party! Make your own paper umbrella. Date: Saturday, 20th June. Time: 3 pm. Place: Luna's garden. See you soon!");});
+  var upd=function(){
+    var ev=$('#ivEvent').value.trim()||'party',dt=$('#ivDate').value.trim()||'Saturday',tm2=$('#ivTime').value.trim()||'3 pm',pl2=$('#ivPlace').value.trim()||'my house';
+    var s="Come to our "+ev+"! Date: "+dt+". Time: "+tm2+". Place: "+pl2+". Please message us to say you're coming!";
+    var o=$('#ivOut');o.textContent=s;o.dataset.say="You're invited! "+s;
+  };
+  ['ivEvent','ivDate','ivTime','ivPlace'].forEach(function(id){$('#'+id).addEventListener('input',upd);});
+  upd();
+  var rows='<b>Name (nombre)</b><b>Instrument</b>';
+  for(var i=0;i<4;i++){rows+='<input id="tbN'+i+'" type="text" maxlength="20" aria-label="Nombre '+(i+1)+'"><input id="tbI'+i+'" type="text" maxlength="24" aria-label="Instrumento '+(i+1)+'">';}
+  $('#tbl').innerHTML=rows;
+}
+
+/* ---------- 11 games ---------- */
+var MEMW=['sunny','cloudy','rainy','snowing','windy','rainbow','hot','cold'].map(byWord);
+var mem={cards:[],open:[],lock:false,moves:0,found:0};
+function memStart(){
+  var cs=[];
+  MEMW.forEach(function(w,i){cs.push({id:i,t:'e',w:w});cs.push({id:i,t:'w',w:w});});
+  mem.cards=shuffle(cs);mem.open=[];mem.lock=false;mem.moves=0;mem.found=0;
+  $('#memGrid').innerHTML=mem.cards.map(function(c,i){
+    return '<button class="mcard" data-m="'+i+'" aria-label="Carta '+(i+1)+'"><span class="mf"><span class="mb">?</span><span class="mfr">'+(c.t==='e'?'<b class="me">'+c.w.e+'</b>':'<b class="mw">'+esc(c.w.w)+'</b>')+'</span></span></button>';
+  }).join('');
+  $('#memMoves').textContent='0';$('#memFound').textContent='0';
+}
+function initMemory(){
+  $('#memGrid').addEventListener('click',function(e){
+    var b=e.target.closest('[data-m]');if(!b||mem.lock){return;}
+    if(b.classList.contains('flip')||b.classList.contains('done')){return;}
+    var i=+b.dataset.m,c=mem.cards[i];
+    b.classList.add('flip');TTS.say(c.w.w);
+    mem.open.push(i);
+    if(mem.open.length===2){
+      mem.moves++;$('#memMoves').textContent=String(mem.moves);
+      var a=mem.cards[mem.open[0]],d=mem.cards[mem.open[1]];
+      var btns=$$('.mcard',$('#memGrid'));
+      var i0=mem.open[0],i1=mem.open[1];
+      if(a.id===d.id){
+        mem.found++;$('#memFound').textContent=String(mem.found);
+        btns[i0].classList.remove('flip');btns[i1].classList.remove('flip');
+        btns[i0].classList.add('done');btns[i1].classList.add('done');
+        mem.open=[];sfx('ok');addStars(1);
+        if(mem.found===MEMW.length){confetti();sfx('win');after(900,function(){TTS.say('You win! Great memory!');});}
+      }else{
+        mem.lock=true;
+        after(1100,function(){btns[i0].classList.remove('flip');btns[i1].classList.remove('flip');mem.open=[];mem.lock=false;});
+      }
+    }
+  });
+  $('#memReset').addEventListener('click',memStart);
+  memStart();
+}
+
+var WSW=['SUNNY','CLOUDY','RAINY','SNOWY','WINDY','RAINBOW','SCARF','GLOVES','SWEATER','COLD'];
+var WSN=12;
+var ws={grid:[],found:{},first:null,count:0};
+function wsBuild(){
+  var dirs=[[0,1],[1,0],[1,1]];
+  for(var tries=0;tries<300;tries++){
+    var g=[];for(var r0=0;r0<WSN;r0++){g.push(new Array(WSN).fill(''));}
+    var words=shuffle(WSW).sort(function(a,b){return b.length-a.length;});
+    var ok=true;
+    for(var wi=0;wi<words.length&&ok;wi++){
+      var w=words[wi],placed=false;
+      for(var a=0;a<120&&!placed;a++){
+        var d=dirs[rnd(dirs.length)],r=rnd(WSN),c=rnd(WSN);
+        if(r+d[0]*(w.length-1)>=WSN||c+d[1]*(w.length-1)>=WSN){continue;}
+        var fits=true;
+        for(var k=0;k<w.length;k++){var ch=g[r+d[0]*k][c+d[1]*k];if(ch&&ch!==w[k]){fits=false;break;}}
+        if(!fits){continue;}
+        for(var k2=0;k2<w.length;k2++){g[r+d[0]*k2][c+d[1]*k2]=w[k2];}
+        placed=true;
+      }
+      if(!placed){ok=false;}
+    }
+    if(ok){return g;}
+  }
+  var f=[];for(var q=0;q<WSN;q++){f.push(new Array(WSN).fill(''));}
+  WSW.forEach(function(w,i){for(var k3=0;k3<w.length;k3++){f[i][k3]=w[k3];}});
+  return f;
+}
+function wsStart(){
+  var g=wsBuild(),L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for(var r=0;r<WSN;r++){for(var c=0;c<WSN;c++){if(!g[r][c]){g[r][c]=L[rnd(26)];}}}
+  ws.grid=g;ws.found={};ws.first=null;ws.count=0;
+  var h='';
+  for(var r2=0;r2<WSN;r2++){for(var c2=0;c2<WSN;c2++){h+='<button class="wsc" data-r="'+r2+'" data-c="'+c2+'" aria-label="Letra '+g[r2][c2]+'">'+g[r2][c2]+'</button>';}}
+  $('#wsGrid').innerHTML=h;
+  $('#wsList').innerHTML=WSW.map(function(w){return '<button class="wchip say" data-w="'+w+'" data-say="'+w.toLowerCase()+'">'+w.toLowerCase()+'</button>';}).join('');
+  var fb=$('#wsFb');fb.className='fb';fb.textContent='Encontradas: 0 de '+WSW.length;
+  enhance();
+}
+function initWordSearch(){
+  $('#wsGrid').addEventListener('click',function(e){
+    var b=e.target.closest('.wsc');if(!b){return;}
+    var r=+b.dataset.r,c=+b.dataset.c;
+    var cells=$$('.wsc',$('#wsGrid'));
+    if(!ws.first){ws.first={r:r,c:c};b.classList.add('sel');sfx('pop');return;}
+    var r0=ws.first.r,c0=ws.first.c;
+    cells.forEach(function(x){x.classList.remove('sel');});
+    ws.first=null;
+    var dr2=r-r0,dc=c-c0;
+    if(!(dr2===0||dc===0||Math.abs(dr2)===Math.abs(dc))||(dr2===0&&dc===0)){toast('Intenta de nuevo: toca la primera y la última letra.');sfx('bad');return;}
+    var steps=Math.max(Math.abs(dr2),Math.abs(dc)),sr=Math.sign(dr2),sc=Math.sign(dc),word='',idx=[];
+    for(var k=0;k<=steps;k++){var rr=r0+sr*k,cc=c0+sc*k;word+=ws.grid[rr][cc];idx.push(rr*WSN+cc);}
+    var rev=word.split('').reverse().join('');
+    var hit=null;
+    if(WSW.indexOf(word)>-1&&!ws.found[word]){hit=word;}
+    else if(WSW.indexOf(rev)>-1&&!ws.found[rev]){hit=rev;}
+    if(hit){
+      ws.found[hit]=true;ws.count++;
+      var colorCls='f'+(ws.count%5);
+      idx.forEach(function(i){cells[i].classList.add(colorCls);});
+      $$('#wsList .wchip').forEach(function(ch){if(ch.dataset.w===hit){ch.classList.add('found');}});
+      TTS.say(hit.toLowerCase());sfx('ok');addStars(1);
+      var fb=$('#wsFb');fb.className='fb ok';fb.textContent='Encontradas: '+ws.count+' de '+WSW.length;
+      if(ws.count===WSW.length){confetti();sfx('win');after(900,function(){TTS.say('You found them all! Excellent!');});}
+    }else{toast('Esa no es una de las palabras. ¡Sigue buscando!');sfx('bad');}
+  });
+  $('#wsReset').addEventListener('click',wsStart);
+  wsStart();
+}
+
+var WH=['sunny','cloudy','rainy','snowing','windy','hot','cold','rainbow'];
+var whRot=0,spinning=false;
+function initWheel(){
+  var cols=['#ff4fa0','#b36bff','#ff8cc6','#7a3cf0'],stops=[];
+  WH.forEach(function(w,i){stops.push(cols[i%4]+' '+(i*45)+'deg '+((i+1)*45)+'deg');});
+  var wheel=$('#wheel');
+  wheel.style.background='conic-gradient('+stops.join(',')+')';
+  var sp='';
+  WH.forEach(function(w,i){var ang=i*45+22.5;sp+='<span aria-hidden="true" style="transform:rotate('+ang+'deg) translateY(-96px) rotate(-'+ang+'deg)">'+byWord(w).e+'</span>';});
+  wheel.innerHTML=sp;
+  $('#spinBtn').addEventListener('click',function(){
+    if(spinning){return;}
+    spinning=true;
+    var i=rnd(WH.length),center=i*45+22.5;
+    var target=(360-center);
+    whRot=Math.ceil(whRot/360)*360+360*4+target;
+    wheel.style.transform='rotate('+whRot+'deg)';
+    TTS.say('Spin!');
+    var out=$('#spinOut');out.textContent='…';
+    var fin=function(){
+      if(!spinning){return;}
+      spinning=false;
+      var s=sentenceFor(WH[i]);
+      out.textContent=s;out.dataset.say=s;
+      sfx('ok');
+      TTS.say("What's the weather like? "+s,null,out);
+    };
+    after(reduce?100:4100,fin);
+  });
+}
+
+/* ---------- 12 diploma ---------- */
+function initDiploma(){
+  $('#dipBtn').addEventListener('click',function(){
+    var n=$('#dipName').value.trim();
+    if(!n){toast('Escribe tu nombre primero.');$('#dipName').focus();return;}
+    $('#dipText').innerHTML='¡Felicitaciones, <b>'+esc(n)+'</b>! Eres una meteoróloga experta. Estrellas ganadas: <b id="dipStars">'+stars+'</b> ⭐';
+    confetti();sfx('win');
+    TTS.say('Congratulations, '+n+'! You are a weather expert!');
+  });
+}
+
+/* ---------- init ---------- */
+function init(){
+  initHeader();initVocab();initPostcards();initListen();initPlaces();initPast();initClothes();initSounds();initCase();initInstruments();initInvite();initMemory();initWordSearch();initWheel();initDiploma();
+  var nubi=$('.nubi');if(nubi){nubi.addEventListener('click',function(){sfx('pop');});}
+  enhance();
+}
+init();
+})();
+</script>
